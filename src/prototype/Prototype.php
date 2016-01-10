@@ -193,6 +193,31 @@ final class Prototype
     }
 
     /**
+     * @param $name
+     */
+    public function __unset($name) {
+        if (!in_array( $name, [ 'prototype', 'properties' ] )) {
+            $observers = \arc\prototype::getObservers($this);
+            $continue = true;
+            foreach($observers as $observer) {
+                $result = $observer($this, $name, null);
+                if ($result === false) {
+                    $continue = false;
+                }
+            }
+            if ($continue) {
+                if (array_key_exists($name, $this->_staticMethods)) {
+                    unset($this->_staticMethods[$name]);
+                }
+                unset($this->_ownProperties[$name]);
+                // purge prototype cache for this property - this will clear too much but cache will be filled again
+                // clearing exactly the right entries from the cache will generally cost more performance than this
+                unset( self::$properties[ $name ] );
+            }
+        }
+    }
+
+    /**
      *
      */
     public function __destruct()
