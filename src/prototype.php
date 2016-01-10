@@ -195,4 +195,32 @@ final class prototype {
 		}
 		return $prototypes;
 	}
+
+	/**
+	 * Returns a new function that calls the given function just once and then simply
+	 * returns its result on each subsequent call.
+	 * @param callable function to call just once and then remember the result
+	 */
+	public static function memoize($f) 
+	{
+		return memoize($f);
+	}
+}
+
+/**
+ * Helper function to make sure that the returned Closure is not defined in a static scope.
+ * @param callable function to call just once and then remember the result
+ */
+function memoize($f) 
+{
+    return function () use ($f) {
+        static $result;
+        if (null === $result) {
+            if ( $f instanceof \Closure && isset($this) ) {
+                $f = \Closure::bind($f, $this);
+            }
+            $result = $f();
+        }
+        return $result;
+    };
 }
