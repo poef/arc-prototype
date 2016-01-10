@@ -1,13 +1,19 @@
-arc/lambda
-==========
+arc/prototype
+=============
 
-This component makes it easy create ad-hoc objects, similar to lambda functions or closures. These objects also follow a prototypical inheritance scheme similar to smalltalk and javascript.
+This component adds prototypes to PHP, with all the javascript features like 
+- extend
+- assign
+- freeze
+- observe
+etc.
+
 
 Simple example:
 
 ```php5
 <?php
-    $page = \arc\lambda::prototype( [
+    $page = \arc\prototype::create( [
         'title' => 'A page',
         'content' => '<p>Some content</p>',
         'view' => function($args) {
@@ -22,7 +28,7 @@ Simple example:
         }
     ] );
 
-    $menuPage = $page->extend( [
+    $menuPage = \arc\prototype::extend($page, [
         'body' => function($args) {
             return $this->menu($args) . $this->prototype->body($args);
         },
@@ -42,15 +48,16 @@ Simple example:
         }
     ] );
 ```
-Lambda prototype as a dependency injection container:
+
+Or use a prototype as a dependency injection container:
 
 ```php5
 <?php
-    $di = \arc\lambda::prototype([
+    $di = \arc\prototype::create([
          'dsn'      => 'mysql:dbname=testdb;host=127.0.0.1';
          'user'     => 'dbuser',
          'password' => 'dbpassword',
-         'database' => \arc\lambda::singleton( function() {
+         'database' => \arc\prototype::memoize( function() {
              // this generates a single PDO object once and then returns it for each subsequent call
              return new PDO( $this->dsn, $this->user, $this->password );
          } ),
@@ -60,97 +67,115 @@ Lambda prototype as a dependency injection container:
          }
     ] );
 
-    $diCookieSession = $di->extend( [ 
+    $diCookieSession = \arc\prototype::extend( $di, [ 
          'session'  => function() {
              return new myCookieSession();
          }
     ] );
 ```
-\arc\lambda::prototype
-----------------------
-    (object) \arc\lambda::prototype( (array) $properties )
 
-Returns a new \arc\lambda\Prototype object with the given properties. The properties array may contain closures, these will be available as methods on the new Prototype object.
-
-\arc\lambda::singleton
-----------------------
-    (function) \arc\lambda::singleton( (callable) $f )
-
-Returns a function that will only be run once. After the first run it will then return the value that run returned, unless that value is null. This makes it possible to create lazy loading functions that only run when used. You can also create shared objects in a dependency injection container.
-
-This method doesn't guarantee that the given function is never run more than once - unless you only ever call it indirectly through the resulting singleton function.
-
-\arc\lambda::curry
-------------------
-    (function) \arc\lambda::curry( (callable) $f, (array) $curriedArgs )
-
-This method returns a copy of the given function $f from which the arguments supplied as $curriedArgs are removed. When called it will suplly the $curriedArgs in addition to the leftover arguments.
+Note: PHP has a limitation in that you can never bind a static function to an object. This will result in an uncatchable fatal error. To work around this, you must tell the prototype that a Closure is static, by prefixing the name with a ":". In that case the first argument to that method will always be the current object:
 
 ```php5
 <?php
-    $myApi = \arc\lambda::prototype( [
-       'htmlentities' => \arc\lambda::curry( 'htmlentities', [ 1 => ENT_HTML5|ENT_NOQUOTES, 3 => false ] )
-    ] );
+    class foo {
+        public static function myFactory() {
+            return \arc\prototype::create([
+                'foo'  => 'Foo',
+                ':bar' => function($self) {
+                    return $self->foo;
+                }
+            ]);
+        }
+    }
+
+    $f = foo::myFactory();
+    echo $f->bar(); // outputs: "Foo";
 ```
-The above example will result in an object with a htmlentities method that has two arguments, the string to encode and an optional encoding argument. The curried arguments will be mixed in with the given arguments, based on their key in the $curriedArgs.
+Static closure are all closures defined within a static function, or explicitly defined as static. Closures defined outside of a class scope can be bound and don't need this workaround.
 
-```php5
-<?php
-    echo $myApi->htmlentities( 'Encode < this&tm; >', 'ISO-8859-1' );
-```
-This is the same as:
 
-```php5
-<?php
-    echo htmlentities( 'Encode < this&tm; >', ENT_HTML5|ENT_NOQUOTES, 'ISO-8859-1', false );
-```
+methods
+-------
 
-\arc\lambda::pepper
--------------------
-    (function) \arc\lambda::pepper( (callable) $callable, (array) $namedArgs=null )
+###\arc\prototype::create
+    (object) \arc\prototype::create( (array) $properties )
 
-This is an experimental method to convert a normal function or method into a function that accepts an array with named arguments. It uses Reflection to gather information about the given function or method if you don't pass a $namedArgs array.
+Returns a new \arc\prototype\Prototype object with the given properties. The properties array may contain closures, these will be available as methods on the new Prototype object.
 
-The format for $namedArgs is [ 'argumentName' => 'defaultValue' ]. The order in $namedArgs is the order in which arguments will be supplied to the original method or function.
-    
-Given a method that has a large number of arguments, optional or not, pepper allows you to generate a method that is more easily called:
 
-```php5
-<?php
-    function complexQuery( $query, $database, $user, $password ) { ... }
+###\arc\prototype::extend
+    (object) \arc\prototype::extend( (object) $prototype, (array) $properties )
 
-    $myApi = \arc\lambda::prototype( [
-        'query' => \arc\lambda::pepper( 'complexQuery', [
-            'query' => null,
-            'database' => $this->database,
-            'user'     => $this->dbuser,
-            'password' => $this->dbpassword
-        ] )
-    ] );
-```
-And now you can call the complexQuery function like this:
-
-```php5
-<?php
-    $myApi->query([ 'query' => 'select * from aTable', 'database' => 'alternateDatabase' ]);
-```
-\arc\lambda\Prototype::extend
------------------------------
-    (object) \arc\lambda\Prototype::extend( (array) $properties )
-
-This returns a new Prototype object with the given properties, just like \arc\lambda::prototype(). But in addition the new object has a prototype property linking it to the original object from which it was extended.
+This returns a new Prototype object with the given properties, just like \arc\prototype::create(). But in addition the new object has a prototype property linking it to the original object from which it was extended.
 Any methods or properties on the original object will also be accessible in the new object through its prototype chain.
 
-You can check an objects prototype by getting the prototype property of a \arc\lambda\Prototype object. You cannot change this property - it is readonly. You can only set the prototype property by using the extend method.
+You can check an objects prototype by getting the prototype property of a \arc\prototype\Prototype object. You cannot change this property - it is readonly. You can only set the prototype property by using the extend method.
 
-\arc\lambda\Prototype::hasOwnProperty
--------------------------------------
-    (bool) \arc\lambda\Prototype::hasOwnProperty( (string) $propertyName )
+
+###\arc\prototype::assign
+    (object) \arc\prototype::extend( (object) $prototype, (object) ...$objects )
+
+This returns a new Prototype object with the given prototype set. In addition all properties on the extra objects passed to this method, will be copied to the new Prototype object. For any property that is set on multiple objects, the value of the property in the later object overwrites values from other objects.
+
+
+###\arc\prototype::freeze
+    (void) \arc\prototype::freeze( (object) $prototype )
+
+This makes changes to the given Prototype object impossible, untill you call \arc\prototype::unfreeze($prototype). The object becomes immutable. Any attempt to change the object will silently fail. If you would rather have an exception, use \arc\prototyp::observe() instead and throw an exception there.
+
+
+###\arc\prototype::unfreeze
+    (void) \arc\prototype::unfreeze( (object) $prototype )
+
+This makes the given Prototype object mutable again.
+
+
+###\arc\prototype::observe
+    (void) \arc\prototype::observe( (object) $prototype, (Closure) $f )
+
+This calls the Closure $f each time a property of $prototype is changed. The Closure is called with the prototype object, the name of the property and the new value.
+If the closure returns false exactly (no other 'falsy' values will work), the change will be cancelled. 
+
+```php5
+<?php
+    \arc\prototype::observe($object, function($object, $name, $value) {
+        if ( $name === 'youcanttouchthis' ) {
+            return false;
+        }
+    });
+
+```
+
+
+###\arc\prototype::unobserve
+    (void) \arc\prototype::unobserve( (object) $prototype, (Closure) $f )
+
+This removes a specific observer function from a Prototype object. You must pass the exact same closure for this to work.
+
+
+###\arc\prototype::hasProperty
+    (bool) \arc\prototype::hasProperty( (string) $propertyName )
+
+Returns true if the requested property is available on the current Prototype object itself or any of its prototypes.
+
+
+###\arc\prototype::hasOwnProperty
+    (bool) \arc\prototype::hasOwnProperty( (string) $propertyName )
 
 Returns true if the requested property is available on the current Prototype object itself without checking its prototype chain.
 
-\arc\lambda\Prototype::hasPrototype
------------------------------------
-    (bool) \arc\lambda\Prototype::hasPrototype( (string) $prototypeObject )
+
+
+###\arc\prototype::hasPrototype
+    (bool) \arc\prototype::hasPrototype( (string) $prototypeObject )
 
 Returns true if the given object is part of the prototype chain of the current Prototype object.
+
+
+###\arc\prototype::memoize
+    (Closure) \arc\prototype::memoize( (callable) $f )
+
+Returns a function that will only be run once. After the first run it will then return the value that run returned, unless that value is null. This makes it possible to create lazy loading functions that only run when used. You can also create shared objects in a dependency injection container.
+
+This method doesn't guarantee that the given function is never run more than once - unless you only ever call it indirectly through the resulting closure.
