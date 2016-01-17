@@ -75,21 +75,6 @@
             $this->assertEquals( $bar->foo(), '<b>foobar</b>' );
         }
 
-
-        function testToString()
-        {
-            $foo = \arc\prototype::create([
-                'foofoo' => function () {
-                    return 'foofoo';
-                },
-                '__toString' => function () {
-                    return 'foobar';
-                },
-            ]);
-            $tst = (string)$foo;
-            $this->assertEquals( 'foobar', $tst);
-        }
-
         function testStatic() 
         {
             $foo = \arc\prototype::create([
@@ -99,6 +84,27 @@
                 }
             ]);
             $this->assertEquals( $foo->foo(), 'Bar');
+        }
+
+        function testToString()
+        {
+            $foo = \arc\prototype::create([
+                '__toString' => function() {
+                    return 'Foo';
+                }
+            ]);
+            $this->assertEquals('Foo', (string) $foo);
+        }
+        
+        function testStaticToString()
+        {            
+            $bar = \arc\prototype::create([
+                'bar' => 'Bar',
+                ':__toString' => static function($self) {
+                    return $self->bar;
+                }
+            ]);
+            $this->assertEquals('Bar', $bar.'');
         }
 
         function testObserve()
@@ -159,5 +165,6 @@
             $this->assertEquals($zoom->bar, $foo->bar);
             $this->assertEquals($zoom->zod, $zod->zod);
         }
+
 
     }

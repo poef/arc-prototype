@@ -187,9 +187,12 @@ final class Prototype
      */
     public function __isset($name)
     {
-        $val = $this->_getPrototypeProperty( $name );
-
-        return isset( $val );
+        if ( array_key_exists($name, $this->_ownProperties) ) {
+            return isset($this->_ownProperties[$name]);
+        } else {
+            $val = $this->_getPrototypeProperty( $name );
+            return isset( $val );
+        }
     }
 
     /**
@@ -223,7 +226,7 @@ final class Prototype
     public function __destruct()
     {
     	\arc\prototype::_destroy($this);
-        return $this->_tryToCall( $this->__destruct );
+        return $this->_tryToCall( '__destruct' );
     }
 
     /**
@@ -231,7 +234,7 @@ final class Prototype
      */
     public function __toString()
     {
-        return $this->_tryToCall( $this->__toString );
+        return (string) $this->_tryToCall( '__toString' );
     }
 
     /**
@@ -253,10 +256,12 @@ final class Prototype
     public function __clone()
     {
         // make sure all methods are bound to $this - the new clone.
-        foreach (get_object_vars( $this ) as $property) {
-            $this->{$property} = $this->_bind( $property );
+        foreach ( $this->_ownProperties as $name => $property) {
+            if ( !array_key_exists($name, $this->_staticMethods) ) {
+                $this->{$name} = $this->_bind( $property );
+            }
         }
-        $this->_tryToCall( $this->__clone );
+        $this->_tryToCall( '__clone' );
     }
 
     /**
@@ -280,10 +285,13 @@ final class Prototype
      * @param array $args
      * @return mixed
      */
-    private function _tryToCall($f, $args = [])
+    private function _tryToCall($name, $args = [])
     {
-        if (is_callable( $f )) {
-            return call_user_func_array( $f, $args );
+        if ( isset($this->{$name}) && is_callable( $this->{$name} )) {
+            if ( array_key_exists($name, $this->_staticMethods) ) {
+                array_unshift($args, $this);
+            }
+            return call_user_func_array( $this->{$name}, $args );
         }
     }
 }
