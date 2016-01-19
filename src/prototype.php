@@ -10,11 +10,9 @@
 namespace arc;
 
 /**
- * Class lambda
- * Experimental functionality, may be removed later, use at own risk.
  * @package arc
  */
-final class Prototype 
+final class prototype 
 {
 
     /**
@@ -38,23 +36,23 @@ final class Prototype
     private static $observers = null;
 
     /**
-     * Returns a new \arc\prototype\Prototype object with the given properties. The 
+     * Returns a new \arc\prototype\Object object with the given properties. The 
      * properties array may contain closures, these will be available as methods on 
      * the new Prototype object.
      * @param array $properties List of properties and methods
-     * @return \arc\prototype\Prototype
+     * @return \arc\prototype\Object
      */
     public static function create($properties) 
     {
-        return new prototype\Prototype($properties);
+        return new prototype\Object($properties);
     }
 
     /**
-     * Returns a new \arc\prototype\Prototype object with the given object as its
+     * Returns a new \arc\prototype\Object object with the given object as its
      * prototype and the given properties and methods set.
-     * @param \arc\prototype\Prototype $prototype The prototype for this object
+     * @param \arc\prototype\Object $prototype The prototype for this object
      * @param array $properties List of properties and methods
-     * @return \arc\prototype\Prototype
+     * @return \arc\prototype\Object
      */
     public static function extend($prototype, $properties) 
     {
@@ -66,7 +64,7 @@ final class Prototype
                 self::$instances[$prototype] = [];
             }
             $properties['prototype'] = $prototype;
-            $instance = new prototype\Prototype($properties);
+            $instance = new prototype\Object($properties);
             $list = self::$instances[$prototype];
             array_push($list,$instance);
             self::$instances[$prototype] = $list;
@@ -78,7 +76,7 @@ final class Prototype
 
     /**
      * Helper method to remove cache information when a prototype is no longer needed.
-     * @param \arc\prototype\Prototype $obj The object to be removed
+     * @param \arc\prototype\Object $obj The object to be removed
      */
     public static function _destroy($obj) 
     {
@@ -95,12 +93,12 @@ final class Prototype
     }
 
     /**
-     * Returns a new \arc\prototype\Prototype with the given prototype set. In addition 
+     * Returns a new \arc\prototype\Object with the given prototype set. In addition 
      * all properties on the extra objects passed to this method will be copied to the 
      * new Prototype object. For any property that is set on multiple objects, the value 
      * of the property in the later object overwrites values from other objects.
-     * @param \arc\prototype\Prototype $prototype the prototype for the new object
-     * @param \arc\prototype\Prototype ...$object the objects whose properties will be assigned
+     * @param \arc\prototype\Object $prototype the prototype for the new object
+     * @param \arc\prototype\Object ...$object the objects whose properties will be assigned
      */
     public static function assign($prototype) 
     {
@@ -117,7 +115,7 @@ final class Prototype
      * This makes changes to the given Prototype object impossible, untill you call 
      * \arc\prototype::unfreeze($prototype). The object becomes immutable. Any 
      * attempt to change the object will silently fail.
-     * @param \arc\prototype\Prototype $prototype the object to freeze
+     * @param \arc\prototype\Object $prototype the object to freeze
      */
     public static function freeze($prototype) 
     {
@@ -132,7 +130,7 @@ final class Prototype
 
     /**
      * Makes the given object mutable again.
-     * @param \arc\prototype\Prototype $prototype
+     * @param \arc\prototype\Object $prototype
      */
     public static function unfreeze($prototype) 
     {
@@ -144,7 +142,7 @@ final class Prototype
 
     /**
      * Returns a list of keys of all the properties in the given prototype
-     * @param \arc\prototype\Prototype $prototype
+     * @param \arc\prototype\Object $prototype
      * @return array
      */
     public static function keys($prototype) 
@@ -155,7 +153,7 @@ final class Prototype
 
     /**
      * Returns an array with key:value pairs for all properties in the given prototype
-     * @param \arc\prototype\Prototype $prototype
+     * @param \arc\prototype\Object $prototype
      * @return array
      */
     public static function entries($prototype) 
@@ -165,7 +163,7 @@ final class Prototype
 
     /**
      * Returns a list of all the property values in the given prototype
-     * @param \arc\prototype\Prototype $prototype
+     * @param \arc\prototype\Object $prototype
      * @return array
      */
     public static function values($prototype) 
@@ -176,7 +174,7 @@ final class Prototype
 
     /**
      * Returns true if the the property name is available in this prototype
-     * @param \arc\prototype\Prototype $prototype
+     * @param \arc\prototype\Object $prototype
      * @param string $property
      * @return bool
      */
@@ -189,7 +187,7 @@ final class Prototype
     /**
      * Returns a list of all the property names defined in this prototype instance
      * without traversing its prototypes.
-     * @param \arc\prototype\Prototype $prototype
+     * @param \arc\prototype\Object $prototype
      * @return array
      */
     public static function ownKeys($prototype) 
@@ -201,7 +199,7 @@ final class Prototype
     /**
      * Returns an array with key:value pairs for all properties in this prototype
      * instance wihtout traversing its prototypes.
-     * @param \arc\prototype\Prototype $prototype
+     * @param \arc\prototype\Object $prototype
      * @return array
      */
     public static function ownEntries($prototype) 
@@ -212,7 +210,7 @@ final class Prototype
     /**
      * Returns a list of all the property values in the given prototype
      * instance wihtout traversing its prototypes.
-     * @param \arc\prototype\Prototype $prototype
+     * @param \arc\prototype\Object $prototype
      * @return array
      */
     public static function ownValues($prototype) 
@@ -224,7 +222,7 @@ final class Prototype
     /**
      * Returns true if the the property name is available in this prototype
      * instance wihtout traversing its prototypes.
-     * @param \arc\prototype\Prototype $prototype
+     * @param \arc\prototype\Object $prototype
      * @param string $property
      * @return bool
      */
@@ -236,7 +234,7 @@ final class Prototype
 
     /**
      * Returns true if the given prototype is made immutable by freeze()
-     * @param \arc\prototype\Prototype $prototype
+     * @param \arc\prototype\Object $prototype
      * @return bool
      */
     public static function isFrozen($prototype) 
@@ -246,7 +244,7 @@ final class Prototype
 
     /**
      * Returns true if the given prototype is made not Extensible
-     * @param \arc\prototype\Prototype $prototype
+     * @param \arc\prototype\Object $prototype
      * @return bool
      */
     public static function isExtensible($prototype) 
@@ -260,7 +258,7 @@ final class Prototype
      * name of the property and the new value (null if unset).
      * If the closure returns false exactly (no other 'falsy' values will work), 
      * the change will be cancelled
-     * @param \arc\prototype\Prototype $prototype
+     * @param \arc\prototype\Object $prototype
      * @param \Closure $callback
      */
     public static function observe($prototype, $callback) 
@@ -276,7 +274,7 @@ final class Prototype
 
     /**
      * Returns a list of observers for the given prototype.
-     * @param \arc\prototype\Prototype $prototype
+     * @param \arc\prototype\Object $prototype
      * @return array
      */
     public static function getObservers($prototype) 
@@ -286,7 +284,7 @@ final class Prototype
 
     /**
      * Makes an object no longer extensible.
-     * @param \arc\prototype\Prototype $prototype
+     * @param \arc\prototype\Object $prototype
      */
     public static function preventExtensions($prototype) 
     {
@@ -327,7 +325,7 @@ final class Prototype
     /**
      * Returns a list of prototype objects that have this prototype object
      * in their prototype chain.
-     * @param \arc\prototype\Prototype $prototype
+     * @param \arc\prototype\Object $prototype
      * @return array
      */
     public static function getDescendants($prototype) 
@@ -343,7 +341,7 @@ final class Prototype
     /**
      * Returns a list of prototype objects that have this prototype object
      * as their direct prototype.
-     * @param \arc\prototype\Prototype $prototype
+     * @param \arc\prototype\Object $prototype
      * @return array
      */
     public static function getInstances($prototype) 
@@ -353,7 +351,7 @@ final class Prototype
 
     /**
      * Returns the full prototype chain for the given object.
-     * @param \arc\prototype\Prototype $obj
+     * @param \arc\prototype\Object $obj
      * @return array
      */
     public static function getPrototypes($obj) 

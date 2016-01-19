@@ -9,7 +9,7 @@
  */
 namespace arc\prototype;
 
-final class Prototype
+final class Object
 {
     /** 
      * @var array cache for prototype properties
