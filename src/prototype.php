@@ -206,12 +206,7 @@ final class Prototype
 	 */
 	public static function ownEntries($prototype) 
 	{
-		// this needs access to the private _ownProperties variable
-		// this is one way to do that.
-		$f = \Closure::bind(function() use ($prototype) {
-			return $prototype->_ownProperties;
-		}, $prototype, $prototype);
-		return $f();
+		return \arc\_getOwnEntries($prototype);
 	}
 
 	/**
@@ -398,4 +393,17 @@ function memoize($f)
         }
         return $result;
     };
+}
+
+/**
+ * 'private' function that must be declared outside static scope, so we can bind
+ * the closure to an object to peek into its private _ownProperties property
+ */
+function _getOwnEntries($prototype) {
+	// this needs access to the private _ownProperties variable
+	// this is one way to do that.
+	$f = \Closure::bind(function() {
+		return $this->_ownProperties;
+	}, $prototype, $prototype);
+	return $f();
 }
