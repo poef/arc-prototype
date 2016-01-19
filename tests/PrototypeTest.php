@@ -160,61 +160,61 @@
             $this->assertEquals($zoom->zod, $zod->zod);
         }
 
-		function testGetter()
-		{
-			$foo = \arc\prototype::create([
-				'bar' => [
-					'get' => function() {
-						return 'Bar';
-					}
-				]
-			]);
-			$bar = $foo->bar;
-			$this->assertEquals('Bar', $bar);
-			$foo->bar = 'Foo';
-			$this->assertEquals('Bar', $bar);
-		}
+        function testGetter()
+        {
+            $foo = \arc\prototype::create([
+                'bar' => [
+                    'get' => function() {
+                        return 'Bar';
+                    }
+                ]
+            ]);
+            $bar = $foo->bar;
+            $this->assertEquals('Bar', $bar);
+            $foo->bar = 'Foo';
+            $this->assertEquals('Bar', $bar);
+        }
 
-		function testSetter()
-		{
-			$bar = new StdClass();
-			$bar->bar = 'BarBar';
-			$foo = \arc\prototype::create([
-				'bar' => [
-					'set' => function($value) use ($bar) {
-						$bar->bar = $value.'Bar';
-					},
-					'get' => function() use ($bar) {
-						return $bar->bar;
-					}
-				]
-			]);
-			$result = $foo->bar;
-			$this->assertEquals('BarBar', $result);
-			$foo->bar = 'Foo';
-			$result = $foo->bar;
-			$this->assertEquals('FooBar', $result);
-		}
+        function testSetter()
+        {
+            $bar = new StdClass();
+            $bar->bar = 'BarBar';
+            $foo = \arc\prototype::create([
+                'bar' => [
+                    'set' => function($value) use ($bar) {
+                        $bar->bar = $value.'Bar';
+                    },
+                    'get' => function() use ($bar) {
+                        return $bar->bar;
+                    }
+                ]
+            ]);
+            $result = $foo->bar;
+            $this->assertEquals('BarBar', $result);
+            $foo->bar = 'Foo';
+            $result = $foo->bar;
+            $this->assertEquals('FooBar', $result);
+        }
 
-		function testStaticGetterSetter()
-		{
-			$bar = new StdClass();
-			$bar->bar = 'BarBar';
-			$foo = \arc\prototype::create([
-				'bar' => [
-					':set' => static function($self, $value) use ($bar) {
-						$bar->bar = $value.'Bar';
-					},
-					':get' => static function($self) use ($bar) {
-						return 'Foo'.$bar->bar;
-					}
-				]
-			]);
-			$result = $foo->bar;
-			$this->assertEquals('FooBarBar', $result);
-			$foo->bar = 'Foo';
-			$result = $foo->bar;
-			$this->assertEquals('FooFooBar', $result);			
-		}
+        function testStaticGetterSetter()
+        {
+            $bar = new StdClass();
+            $bar->bar = 'BarBar';
+            $foo = \arc\prototype::create([
+                'bar' => [
+                    ':set' => static function($self, $value) use ($bar) {
+                        $bar->bar = $value.'Bar';
+                    },
+                    ':get' => static function($self) use ($bar) {
+                        return 'Foo'.$bar->bar;
+                    }
+                ]
+            ]);
+            $result = $foo->bar;
+            $this->assertEquals('FooBarBar', $result);
+            $foo->bar = 'Foo';
+            $result = $foo->bar;
+            $this->assertEquals('FooFooBar', $result);            
+        }
 
     }
