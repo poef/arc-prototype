@@ -91,10 +91,76 @@ final class Prototype
             break;
             default:
                 if ( array_key_exists($name, $this->_ownProperties) ) {
-                    return $this->_ownProperties[$name];
+					$property = $this->_ownProperties[$name];
+					if ( is_array($property) ) {
+						if ( isset($property['get']) && is_callable($property['get']) ) {
+							$getter = \Closure::bind( $property['get'], $this, $this );
+							return $getter();
+						} else if ( isset($property[':get']) && is_callable($property[':get']) ) {
+							return $property[':get']($this);
+						} else if ( (isset($property['set']) && is_callable($property['set']) ) 
+							|| ( isset($property[':set']) && is_callable($property[':set']) ) ) {
+							return null;
+						}
+					}
+					return $property;	
                 }
                 return $this->_getPrototypeProperty( $name );
             break;
+        }
+    }
+
+    /**
+     * @param $name
+     * @param $value
+     */
+    public function __set($name, $value)
+    {
+        if (!in_array( $name, [ 'prototype', 'properties' ] )) {
+            $observers = \arc\prototype::getObservers($this);
+            $continue = true;
+            foreach($observers as $observer) {
+                $result = $observer($this, $name, $value);
+                if ($result === false) {
+                    $continue = false;
+                }
+            }
+            if ($continue) {
+				$clearcache = false;
+				// get current value for $name, to check if it has a getter and/or a setter
+				if ( array_key_exists($name, $this->_ownProperties) ) {
+					$current = $this->_ownProperties[$name];
+				} else {
+					$current = $this->_getPrototypeProperty($name);
+				}
+                if (isset($current) && isset($current['set']) && is_callable($current['set'])) {
+					// bindable setter found, use it, no need to set anything in _ownProperties
+					$setter = \Closure::bind($current['set'], $this, $this);
+					$setter($value);
+				} else if (isset($current) && isset($current[':set']) && is_callable($current[':set'])) {
+					// nonbindable setter found
+					$current[':set']($this, $value);
+				} else if (isset($current) && ( 
+					(isset($current['get']) && is_callable($current['get']) )
+					|| (isset($current[':get']) && is_callable($current[':get']) ) )
+				) {
+					// there is only a getter, no setter, so ignore setting this property, its readonly.
+					return null;
+				} else if (!array_key_exists($name, $this->_staticMethods)) {
+					// bindable value, update _ownProperties, so clearcache as well
+					$clearcache = true;
+                    $this->_ownProperties[$name] = $this->_bind( $value );
+                } else {
+					// non bindable value, update _ownProperties, so clearcache as well
+					$clearcache = true;
+                    $this->_ownProperties[$name] = $value;
+                }
+				if ( $clearcache ) {
+	                // purge prototype cache for this property - this will clear too much but cache will be filled again
+    	            // clearing exactly the right entries from the cache will generally cost more performance than this
+        	        unset( self::$properties[ $name ] );
+				}
+            }
         }
     }
 
@@ -153,33 +219,6 @@ final class Prototype
         }
     }
 
-    /**
-     * @param $name
-     * @param $value
-     */
-    public function __set($name, $value)
-    {
-        if (!in_array( $name, [ 'prototype', 'properties' ] )) {
-            $observers = \arc\prototype::getObservers($this);
-            $continue = true;
-            foreach($observers as $observer) {
-                $result = $observer($this, $name, $value);
-                if ($result === false) {
-                    $continue = false;
-                }
-            }
-            if ($continue) {
-                if (!array_key_exists($name, $this->_staticMethods)) {
-                    $this->_ownProperties[$name] = $this->_bind( $value );
-                } else {
-                    $this->_ownProperties[$name] = $value;
-                }
-                // purge prototype cache for this property - this will clear too much but cache will be filled again
-                // clearing exactly the right entries from the cache will generally cost more performance than this
-                unset( self::$properties[ $name ] );
-            }
-        }
-    }
 
     /**
      * @param $name
