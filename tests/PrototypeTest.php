@@ -104,18 +104,22 @@
         function testObserve()
         {
             $foo = \arc\prototype::create([]);
-            $f = function($ob, $name, $value) {
-                return false;
+			$log = [];
+            $f = function($changes) use (&$log) {
+				$log[] = $changes;
             };
             \arc\prototype::observe($foo, $f);
             $foo->bar = 'bar';
-            $this->assertArrayNotHasKey('bar', \arc\prototype::entries($foo));
-            \arc\prototype::unobserve($foo, $f);
-            $foo->bar = 'bar';
-            $this->assertEquals($foo->bar, 'bar');
-            \arc\prototype::observe($foo, $f);
-            $foo->bar = 'baz';
-            $this->assertEquals($foo->bar, 'bar');
+            $this->assertEquals( 'bar', $log[0]['name']);
+            $this->assertEquals( 'add', $log[0]['type']);
+			$foo->bar = 'foo';
+            $this->assertEquals( 'bar', $log[1]['name']);
+            $this->assertEquals( 'update', $log[1]['type']);
+            $this->assertEquals( 'bar', $log[1]['oldValue']);
+			unset($foo->bar);
+            $this->assertEquals( 'bar', $log[2]['name']);
+            $this->assertEquals( 'delete', $log[2]['type']);
+            $this->assertEquals( 'foo', $log[2]['oldValue']);
         }
 
         function testFreeze()
@@ -124,9 +128,6 @@
             \arc\prototype::freeze($foo);
             $foo->bar = 'bar';
             $this->assertArrayNotHasKey('bar', \arc\prototype::entries($foo));
-            \arc\prototype::unfreeze($foo);
-            $foo->bar = 'bar';
-            $this->assertEquals($foo->bar, 'bar');
         }
 
         function testNotExtendable()

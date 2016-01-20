@@ -9,6 +9,12 @@
  */
 namespace arc\prototype;
 
+/**
+ * Implements a class of objects with prototypical inheritance, getters/setters, and observable changes
+ * very similar to EcmaScript objects
+ * @property \arc\prototype\Object $prototype The prototype for this object
+ * @property array $properties
+ */
 final class Object
 {
     /** 
@@ -110,57 +116,93 @@ final class Object
         }
     }
 
+	private function _isGetterOrSetter($property) {
+		return (
+			isset($property)
+			&& is_array($property) 
+			&& ( 
+				 ( isset($property['get']) && is_callable($property['get']) )
+				|| ( isset($property[':get']) && is_callable($property[':get']) )
+				|| ( isset($property['set']) && is_callable($property['set']) )
+				|| ( isset($property[':set']) && is_callable($property[':set']) )
+			)
+		);
+	}
+
     /**
      * @param $name
      * @param $value
      */
     public function __set($name, $value)
     {
-        if (!in_array( $name, [ 'prototype', 'properties' ] )) {
+        if (in_array( $name, [ 'prototype', 'properties' ] )) {
+            return;
+        }
+        if ( !isset($this->_ownProperties[$name]) && !\arc\prototype::isExtensible($this) ) {
+            return;
+        }
+		$valueIsSetterOrGetter = $this->_isGetterOrSetter($value);
+		$propertyIsSetterOrGetter = (isset($this->_ownProperties[$name]) 
+			? $this->_isGetterOrSetter($this->_ownProperties[$name])
+			: false
+		);
+        if ( \arc\prototype::isSealed($this) && $valueIsSetterOrGetter!=$propertyIsSetterOrGetter ) {
+            return;
+        }
+        $changes = [];
+        $changes['name'] = $name;
+        $changes['object'] = $this;
+        if ( array_key_exists($name, $this->_ownProperties) ) {
+            $changes['type'] = 'update';
+            $changes['oldValue'] = $this->_ownProperties[$name];
+        } else {
+            $changes['type'] = 'add';
+        }
+
+        $clearcache = false;
+        // get current value for $name, to check if it has a getter and/or a setter
+        if ( array_key_exists($name, $this->_ownProperties) ) {
+            $current = $this->_ownProperties[$name];
+        } else {
+            $current = $this->_getPrototypeProperty($name);
+        }
+		if ( $valueIsSetterOrGetter ) {
+			// reconfigure current property
+			$clearcache = true;
+			$this->_ownProperties[$name] = $value;
+			unset($this->_staticMethods[$name]);
+		} else if (isset($current) && isset($current['set']) && is_callable($current['set'])) {
+            // bindable setter found, use it, no need to set anything in _ownProperties
+            $setter = \Closure::bind($current['set'], $this, $this);
+            $setter($value);
+        } else if (isset($current) && isset($current[':set']) && is_callable($current[':set'])) {
+            // nonbindable setter found
+            $current[':set']($this, $value);
+        } else if (isset($current) && ( 
+            (isset($current['get']) && is_callable($current['get']) )
+            || (isset($current[':get']) && is_callable($current[':get']) ) )
+        ) {
+            // there is only a getter, no setter, so ignore setting this property, its readonly.
+            return null;
+        } else if (!array_key_exists($name, $this->_staticMethods)) {
+            // bindable value, update _ownProperties, so clearcache as well
+            $clearcache = true;
+            $this->_ownProperties[$name] = $this->_bind( $value );
+        } else {
+            // non bindable value, update _ownProperties, so clearcache as well
+            $clearcache = true;
+            $this->_ownProperties[$name] = $value;
+        }
+        if ( $clearcache ) {
+            // purge prototype cache for this property - this will clear too much but cache will be filled again
+            // clearing exactly the right entries from the cache will generally cost more performance than this
+            unset( self::$properties[ $name ] );
             $observers = \arc\prototype::getObservers($this);
-            $continue = true;
-            foreach($observers as $observer) {
-                $result = $observer($this, $name, $value);
-                if ($result === false) {
-                    $continue = false;
-                }
-            }
-            if ($continue) {
-                $clearcache = false;
-                // get current value for $name, to check if it has a getter and/or a setter
-                if ( array_key_exists($name, $this->_ownProperties) ) {
-                    $current = $this->_ownProperties[$name];
-                } else {
-                    $current = $this->_getPrototypeProperty($name);
-                }
-                if (isset($current) && isset($current['set']) && is_callable($current['set'])) {
-                    // bindable setter found, use it, no need to set anything in _ownProperties
-                    $setter = \Closure::bind($current['set'], $this, $this);
-                    $setter($value);
-                } else if (isset($current) && isset($current[':set']) && is_callable($current[':set'])) {
-                    // nonbindable setter found
-                    $current[':set']($this, $value);
-                } else if (isset($current) && ( 
-                    (isset($current['get']) && is_callable($current['get']) )
-                    || (isset($current[':get']) && is_callable($current[':get']) ) )
-                ) {
-                    // there is only a getter, no setter, so ignore setting this property, its readonly.
-                    return null;
-                } else if (!array_key_exists($name, $this->_staticMethods)) {
-                    // bindable value, update _ownProperties, so clearcache as well
-                    $clearcache = true;
-                    $this->_ownProperties[$name] = $this->_bind( $value );
-                } else {
-                    // non bindable value, update _ownProperties, so clearcache as well
-                    $clearcache = true;
-                    $this->_ownProperties[$name] = $value;
-                }
-                if ( $clearcache ) {
-                    // purge prototype cache for this property - this will clear too much but cache will be filled again
-                    // clearing exactly the right entries from the cache will generally cost more performance than this
-                    unset( self::$properties[ $name ] );
-                }
-            }
+			if ( isset($observers[$changes['type']]) ) {
+	            foreach($observers[$changes['type']] as $observer) {
+    	            $observer($changes);
+        	    }
+			}
         }
     }
 
@@ -184,9 +226,6 @@ final class Object
      */
     private function _getLocalProperties()
     {
-        //$getLocalProperties = \Closure::bind(function ($o) {
-        //    return get_object_vars($o);
-        //}, new dummy(), new dummy());
         return [ 'prototype' => $this->prototype ] + $this->_ownProperties;
     }
 
@@ -236,15 +275,8 @@ final class Object
      */
     public function __unset($name) {
         if (!in_array( $name, [ 'prototype', 'properties' ] )) {
-            $observers = \arc\prototype::getObservers($this);
-            $continue = true;
-            foreach($observers as $observer) {
-                $result = $observer($this, $name, null);
-                if ($result === false) {
-                    $continue = false;
-                }
-            }
-            if ($continue) {
+            if ( !\arc\prototype::isSealed($this) ) {
+                $oldValue = $this->_ownProperties[$name];
                 if (array_key_exists($name, $this->_staticMethods)) {
                     unset($this->_staticMethods[$name]);
                 }
@@ -252,6 +284,16 @@ final class Object
                 // purge prototype cache for this property - this will clear too much but cache will be filled again
                 // clearing exactly the right entries from the cache will generally cost more performance than this
                 unset( self::$properties[ $name ] );
+                $observers = \arc\prototype::getObservers($this);
+                $changes = [
+                    'type' => 'delete',
+                    'name' => $name,
+                    'object' => $this,
+                    'oldValue' => $oldValue
+                ];
+                foreach ($observers['delete'] as $observer) {
+                    $result = $observer($changes);
+                }
             }
         }
     }
@@ -292,10 +334,12 @@ final class Object
     public function __clone()
     {
         // make sure all methods are bound to $this - the new clone.
-        foreach (get_object_vars( $this ) as $property) {
-            $this->{$property} = $this->_bind( $property );
+        foreach ($this->_ownProperties as $name => $property) {
+			if ( $property instanceof \Closure && !$this->_staticMethods[$name] ) {
+	            $this->{$name} = $this->_bind( $property );
+			}
         }
-        $this->_tryToCall( $this->__clone );
+        $this->_tryToCall( '__clone' );
     }
 
     /**

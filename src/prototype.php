@@ -10,6 +10,8 @@
 namespace arc;
 
 /**
+ * Methods to create, extend and observe prototype objects in PHP. Also adds a memoize function,
+ * which is useful when using a prototype object as a Dependency Injection container.
  * @package arc
  */
 final class prototype 
@@ -19,6 +21,11 @@ final class prototype
      * @var \SplObjectStorage contains a list of frozen objects and the observer
      */
     private static $frozen = null;
+
+    /**
+     * @var \SplObjectStorage contains a list of frozen objects and the observer
+     */
+    private static $sealed = null;
 
     /**
      * @var \SplObjectStorage contains a list of objects made unextensible and the observer
@@ -80,15 +87,12 @@ final class prototype
      */
     public static function _destroy($obj) 
     {
-        self::unfreeze($obj);
-        if ( isset(self::$notExtensible[$obj]) ) {
-            unset(self::$notExtensible[$obj]);
-        }
-        if ( isset(self::$observers[$obj]) ) {
-            unset(self::$observers[$obj]);
-        }
+        unset(self::$notExtensible[$obj]);
+        unset(self::$sealed[$obj]);
+        unset(self::$frozen[$obj]);
+        unset(self::$observers[$obj]);
         if ( isset($obj->prototype) ) {
-            unset(self::$instances[$obj->prototype]);
+            unset(self::$instances[$obj->prototype][$obj]);
         }
     }
 
@@ -112,9 +116,8 @@ final class prototype
     }
 
     /**
-     * This makes changes to the given Prototype object impossible, untill you call 
-     * \arc\prototype::unfreeze($prototype). The object becomes immutable. Any 
-     * attempt to change the object will silently fail.
+     * This makes changes to the given Prototype object impossible. 
+     * The object becomes immutable. Any attempt to change the object will silently fail.
      * @param \arc\prototype\Object $prototype the object to freeze
      */
     public static function freeze($prototype) 
@@ -122,22 +125,21 @@ final class prototype
         if (!isset(self::$frozen)) {
             self::$frozen = new \SplObjectStorage();
         }
-        self::$frozen[$prototype] = function($name, $value) {
-            return false;
-        };
-        return self::observe($prototype, self::$frozen[$prototype]);    
+		self::seal($prototype);
+        self::$frozen[$prototype] = true;
     }
 
     /**
-     * Makes the given object mutable again.
-     * @param \arc\prototype\Object $prototype
+     * This prevents reconfiguring an object or adding new properties.
+     * @param \arc\prototype\Object $prototype the object to freeze
      */
-    public static function unfreeze($prototype) 
+    public static function seal($prototype) 
     {
-        if ( isset(self::$frozen) && isset(self::$frozen[$prototype]) ) {
-            self::unobserve($prototype, self::$frozen[$prototype]);
-            unset(self::$frozen[$prototype]);
+        if (!isset(self::$sealed)) {
+            self::$sealed = new \SplObjectStorage();
         }
+		self::preventExtensions($prototype);
+        self::$sealed[$prototype] = true;
     }
 
     /**
@@ -243,6 +245,16 @@ final class prototype
     }
 
     /**
+     * Returns true if the given prototype is sealed by seal()
+     * @param \arc\prototype\Object $prototype
+     * @return bool
+     */
+    public static function isSealed($prototype) 
+    {
+        return isset(self::$sealed[$prototype]);
+    }
+
+    /**
      * Returns true if the given prototype is made not Extensible
      * @param \arc\prototype\Object $prototype
      * @return bool
@@ -261,15 +273,25 @@ final class prototype
      * @param \arc\prototype\Object $prototype
      * @param \Closure $callback
      */
-    public static function observe($prototype, $callback) 
+    public static function observe($prototype, $callback, $acceptList=null) 
     {
         if ( !isset(self::$observers) ) {
             self::$observers = new \SplObjectStorage();
         }
         if ( !isset(self::$observers[$prototype]) ) {
-            self::$observers[$prototype] = new \SplObjectStorage();
+            self::$observers[$prototype] = [];
         }
-        self::$observers[$prototype][$callback] = true;
+		if ( !isset($acceptList) ) {
+			$acceptList = ['add','update','delete','reconfigure'];
+		}
+		$observers = self::$observers[$prototype];
+		foreach( $acceptList as $acceptType ) {
+			if ( !isset($observers[$acceptType]) ) {
+				$observers[$acceptType] = new \SplObjectStorage();
+			}
+			$observers[$acceptType][$callback] = true;
+		}
+		self::$observers[$prototype] = $observers;
     }
 
     /**

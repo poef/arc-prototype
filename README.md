@@ -1,55 +1,171 @@
 arc/prototype
 =============
 
-This component adds prototypes to PHP, with all the javascript features like 
-- extend
-- assign
-- freeze
-- observe
-etc.
+This component adds prototypes to PHP, with all the javascript features like Object.extend, Object.assign, Object.freeze and Object.observe. It also has support for setters and getters, defined per property.
 
-
-Simple example:
+Create a prototype object
+-------------------------
 
 ```php5
-<?php
-    $page = \arc\prototype::create( [
-        'title' => 'A page',
-        'content' => '<p>Some content</p>',
-        'view' => function($args) {
-            return '<!doctype html><html><head>' . $this->head($args) 
-                 . '</head><body>' . $this->body($args) . '</body></html>';
-        },
-        'head' => function($args) {
-            return '<title>' . $this->title . '</title>';
-        },
-        'body' => function($args) {
-            return '<h1>' . $this->title . '</h1>' . $this->content;
-        }
-    ] );
-
-    $menuPage = \arc\prototype::extend($page, [
-        'body' => function($args) {
-            return $this->menu($args) . $this->prototype->body($args);
-        },
-        'menu' => function($args) {
-            $result = '';
-            if ( is_array($args['menu']) ) {
-                foreach( $args['menu'] as $index => $title ) {
-                    $result .= $this->menuItem($index, $title);
-                }
-            }
-            if ( $result ) {
-                return \arc\html::ul( ['class' => 'news'], $result );
-            }
-        },
-        'menuItem' => function($index, $title) {
-            return \arc\html::li( [], \arc\html::a( [ 'href' => $index ], $title ) );
-        }
-    ] );
+    $object = \arc\prototype::create();
 ```
 
-Or use a prototype as a dependency injection container:
+Adding properties
+-----------------
+
+```php5
+    $object->foo = 'Foo';
+```
+
+Adding methods
+--------------
+
+```php5
+    $object->bar = function() {
+        return $this->foo.'bar';
+    }
+```
+
+Extending objects
+-----------------
+
+```php5
+    $childObject = \arc\prototype::extend($object);
+    $childObject->foo = 'Vue';
+    echo $childObject->bar();
+```
+
+Quick create
+------------
+
+```php5
+    $object = \arc\prototype::create([
+        'foo' => 'Foo',
+        'bar' => function() {
+            return $this->foo.'bar';
+        }
+    ]);
+```
+
+Quick extend
+------------
+
+```php5
+    $childObject = \arc\prototype::extend($object, [
+        'foo' => 'Vue'
+    ]);
+```
+
+Setters and Getters
+-------------------
+
+```php5
+    $object->guarded = [
+        'set' => function($value) {
+            if ( $value !== 'Foo' ) {
+                $this->unguarded = $value;
+            }
+        },
+        'get' => function() {
+            return 'Foo'.$this->unguarded;
+        }
+    ];
+```
+If you only have a 'set' function, getting the value will always return 'null'. If you only have a 'get'
+function, setting the value will do nothing. 
+
+
+Finalizing objects
+------------------
+
+```php5
+    \arc\prototype::preventExtension($object);
+    $childObject = \arc\prototype::extend($object);
+    var_dump($childObject); // prints 'null'
+
+    $isExtensible = \arc\prototype::isExtensible($object); // returns false
+```
+
+
+Sealing objects
+---------------
+
+```php5
+    $object->foo = 'Foo';
+    \arc\prototype::seal($object);
+    $object->foo = 'Bar';
+    echo $object->foo; // prints 'Bar' 
+    $object->bar = 'Bar';
+    echo $object->bar; // prints 'null'
+
+    $isExtensible = \arc\prototype::isExtensible($object); // returns false
+    $isSealed = \arc\prototype::isSealed($object); // returns true
+```
+
+
+Freezing objects
+----------------
+
+```php5
+    $object->foo = 'Foo';
+    \arc\prototype::freeze($object);
+    $object->foo = 'Bar';
+    echo $object->foo; // prints 'Foo' 
+    $childObject = \arc\prototype::extend($object);
+    var_dump($childObject); // prints 'null'
+
+    $isExtensible = \arc\prototype::isExtensible($object); // returns false
+    $isSealed = \arc\prototype::isSealed($object); // returns true
+    $isFrozen = \arc\prototype::isFrozen($object); // returns true
+```
+
+Observing changes
+-----------------
+
+```php5
+	$log = [];
+    \arc\prototype::observe($object, function($changes) use (&$log) {
+		$log[] = $changes;
+    });
+```
+
+Or limit the observer to specific types of changes:
+
+```php5
+	$log = [];
+	\arc\prototype::observe($object, function($changes) use (&$log) {
+		$log[] = $changes;
+	}, ['add','delete']);
+```
+
+If not set, the full list of change types will be observed: 'add','update','delete','reconfigure'.
+
+
+Setters, Getters and Superprivates
+----------------------------------
+
+```php5
+	function makeAFoo() {
+		$superPrivate = 'Shhh...';
+		$object = \arc\prototype::create();
+		$object->foo = [
+			'get' => function() use (&$superPrivate) {
+				return $superPrivate;
+			}
+		];
+		$object->doFoo = function($value) use (&$superPrivate) {
+			$superPrivate = 'Shhh... '.$value;
+		};
+		return $object;
+	}			
+```
+
+By using a variable that is not a property of the prototype object, but is in the scope of a number of the objects methods, you 
+can create something like a private property. But it is even more private than a normal private property, even other methods in this
+object cannot access this variable. This is called a 'SuperPrivate' in javascript.
+
+Using arc\prototype as a Dependency Injection Container
+-------------------------------------------------------
 
 ```php5
 <?php
@@ -84,7 +200,12 @@ Note: PHP has a limitation in that you can never bind a static function to an ob
                 'foo'  => 'Foo',
                 ':bar' => function($self) {
                     return $self->foo;
-                }
+                },
+				'baz' => [
+					':get' => function($self) {
+						return 'Baz';
+					}
+				]
             ]);
         }
     }
@@ -125,12 +246,6 @@ This returns a new Prototype object with the given prototype set. In addition al
 This makes changes to the given Prototype object impossible, untill you call \arc\prototype::unfreeze($prototype). The object becomes immutable. Any attempt to change the object will silently fail. If you would rather have an exception, use \arc\prototyp::observe() instead and throw an exception there.
 
 
-###\arc\prototype::unfreeze
-    (void) \arc\prototype::unfreeze( (object) $prototype )
-
-This makes the given Prototype object mutable again.
-
-
 ###\arc\prototype::observe
     (void) \arc\prototype::observe( (object) $prototype, (Closure) $f )
 
@@ -146,7 +261,6 @@ If the closure returns false exactly (no other 'falsy' values will work), the ch
     });
 
 ```
-
 
 ###\arc\prototype::unobserve
     (void) \arc\prototype::unobserve( (object) $prototype, (Closure) $f )
