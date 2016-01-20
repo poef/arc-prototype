@@ -116,18 +116,18 @@ final class Object
         }
     }
 
-	private function _isGetterOrSetter($property) {
-		return (
-			isset($property)
-			&& is_array($property) 
-			&& ( 
-				 ( isset($property['get']) && is_callable($property['get']) )
-				|| ( isset($property[':get']) && is_callable($property[':get']) )
-				|| ( isset($property['set']) && is_callable($property['set']) )
-				|| ( isset($property[':set']) && is_callable($property[':set']) )
-			)
-		);
-	}
+    private function _isGetterOrSetter($property) {
+        return (
+            isset($property)
+            && is_array($property) 
+            && ( 
+                 ( isset($property['get']) && is_callable($property['get']) )
+                || ( isset($property[':get']) && is_callable($property[':get']) )
+                || ( isset($property['set']) && is_callable($property['set']) )
+                || ( isset($property[':set']) && is_callable($property[':set']) )
+            )
+        );
+    }
 
     /**
      * @param $name
@@ -141,11 +141,11 @@ final class Object
         if ( !isset($this->_ownProperties[$name]) && !\arc\prototype::isExtensible($this) ) {
             return;
         }
-		$valueIsSetterOrGetter = $this->_isGetterOrSetter($value);
-		$propertyIsSetterOrGetter = (isset($this->_ownProperties[$name]) 
-			? $this->_isGetterOrSetter($this->_ownProperties[$name])
-			: false
-		);
+        $valueIsSetterOrGetter = $this->_isGetterOrSetter($value);
+        $propertyIsSetterOrGetter = (isset($this->_ownProperties[$name]) 
+            ? $this->_isGetterOrSetter($this->_ownProperties[$name])
+            : false
+        );
         if ( \arc\prototype::isSealed($this) && $valueIsSetterOrGetter!=$propertyIsSetterOrGetter ) {
             return;
         }
@@ -166,12 +166,12 @@ final class Object
         } else {
             $current = $this->_getPrototypeProperty($name);
         }
-		if ( $valueIsSetterOrGetter ) {
-			// reconfigure current property
-			$clearcache = true;
-			$this->_ownProperties[$name] = $value;
-			unset($this->_staticMethods[$name]);
-		} else if (isset($current) && isset($current['set']) && is_callable($current['set'])) {
+        if ( $valueIsSetterOrGetter ) {
+            // reconfigure current property
+            $clearcache = true;
+            $this->_ownProperties[$name] = $value;
+            unset($this->_staticMethods[$name]);
+        } else if (isset($current) && isset($current['set']) && is_callable($current['set'])) {
             // bindable setter found, use it, no need to set anything in _ownProperties
             $setter = \Closure::bind($current['set'], $this, $this);
             $setter($value);
@@ -198,11 +198,11 @@ final class Object
             // clearing exactly the right entries from the cache will generally cost more performance than this
             unset( self::$properties[ $name ] );
             $observers = \arc\prototype::getObservers($this);
-			if ( isset($observers[$changes['type']]) ) {
-	            foreach($observers[$changes['type']] as $observer) {
-    	            $observer($changes);
-        	    }
-			}
+            if ( isset($observers[$changes['type']]) ) {
+                foreach($observers[$changes['type']] as $observer) {
+                    $observer($changes);
+                }
+            }
         }
     }
 
@@ -335,9 +335,9 @@ final class Object
     {
         // make sure all methods are bound to $this - the new clone.
         foreach ($this->_ownProperties as $name => $property) {
-			if ( $property instanceof \Closure && !$this->_staticMethods[$name] ) {
-	            $this->{$name} = $this->_bind( $property );
-			}
+            if ( $property instanceof \Closure && !$this->_staticMethods[$name] ) {
+                $this->{$name} = $this->_bind( $property );
+            }
         }
         $this->_tryToCall( '__clone' );
     }

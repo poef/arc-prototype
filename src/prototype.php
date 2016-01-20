@@ -125,7 +125,7 @@ final class prototype
         if (!isset(self::$frozen)) {
             self::$frozen = new \SplObjectStorage();
         }
-		self::seal($prototype);
+        self::seal($prototype);
         self::$frozen[$prototype] = true;
     }
 
@@ -138,7 +138,7 @@ final class prototype
         if (!isset(self::$sealed)) {
             self::$sealed = new \SplObjectStorage();
         }
-		self::preventExtensions($prototype);
+        self::preventExtensions($prototype);
         self::$sealed[$prototype] = true;
     }
 
@@ -281,17 +281,17 @@ final class prototype
         if ( !isset(self::$observers[$prototype]) ) {
             self::$observers[$prototype] = [];
         }
-		if ( !isset($acceptList) ) {
-			$acceptList = ['add','update','delete','reconfigure'];
-		}
-		$observers = self::$observers[$prototype];
-		foreach( $acceptList as $acceptType ) {
-			if ( !isset($observers[$acceptType]) ) {
-				$observers[$acceptType] = new \SplObjectStorage();
-			}
-			$observers[$acceptType][$callback] = true;
-		}
-		self::$observers[$prototype] = $observers;
+        if ( !isset($acceptList) ) {
+            $acceptList = ['add','update','delete','reconfigure'];
+        }
+        $observers = self::$observers[$prototype];
+        foreach( $acceptList as $acceptType ) {
+            if ( !isset($observers[$acceptType]) ) {
+                $observers[$acceptType] = new \SplObjectStorage();
+            }
+            $observers[$acceptType][$callback] = true;
+        }
+        self::$observers[$prototype] = $observers;
     }
 
     /**

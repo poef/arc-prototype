@@ -123,19 +123,19 @@ Observing changes
 -----------------
 
 ```php5
-	$log = [];
+    $log = [];
     \arc\prototype::observe($object, function($changes) use (&$log) {
-		$log[] = $changes;
+        $log[] = $changes;
     });
 ```
 
 Or limit the observer to specific types of changes:
 
 ```php5
-	$log = [];
-	\arc\prototype::observe($object, function($changes) use (&$log) {
-		$log[] = $changes;
-	}, ['add','delete']);
+    $log = [];
+    \arc\prototype::observe($object, function($changes) use (&$log) {
+        $log[] = $changes;
+    }, ['add','delete']);
 ```
 
 If not set, the full list of change types will be observed: 'add','update','delete','reconfigure'.
@@ -145,19 +145,19 @@ Setters, Getters and Superprivates
 ----------------------------------
 
 ```php5
-	function makeAFoo() {
-		$superPrivate = 'Shhh...';
-		$object = \arc\prototype::create();
-		$object->foo = [
-			'get' => function() use (&$superPrivate) {
-				return $superPrivate;
-			}
-		];
-		$object->doFoo = function($value) use (&$superPrivate) {
-			$superPrivate = 'Shhh... '.$value;
-		};
-		return $object;
-	}			
+    function makeAFoo() {
+        $superPrivate = 'Shhh...';
+        $object = \arc\prototype::create();
+        $object->foo = [
+            'get' => function() use (&$superPrivate) {
+                return $superPrivate;
+            }
+        ];
+        $object->doFoo = function($value) use (&$superPrivate) {
+            $superPrivate = 'Shhh... '.$value;
+        };
+        return $object;
+    }            
 ```
 
 By using a variable that is not a property of the prototype object, but is in the scope of a number of the objects methods, you 
@@ -201,11 +201,11 @@ Note: PHP has a limitation in that you can never bind a static function to an ob
                 ':bar' => function($self) {
                     return $self->foo;
                 },
-				'baz' => [
-					':get' => function($self) {
-						return 'Baz';
-					}
-				]
+                'baz' => [
+                    ':get' => function($self) {
+                        return 'Baz';
+                    }
+                ]
             ]);
         }
     }
@@ -243,8 +243,40 @@ This returns a new Prototype object with the given prototype set. In addition al
 ###\arc\prototype::freeze
     (void) \arc\prototype::freeze( (object) $prototype )
 
-This makes changes to the given Prototype object impossible, untill you call \arc\prototype::unfreeze($prototype). The object becomes immutable. Any attempt to change the object will silently fail. If you would rather have an exception, use \arc\prototyp::observe() instead and throw an exception there.
+This makes changes to the given Prototype object impossible. The object 
+becomes immutable. Any attempt to change the 
+object will silently fail. The object is also sealed and no longer
+extensible. The only way to unfreeze it is to clone the object. The clone
+will be unfrozen, unsealed and open to extension.
 
+###\arc\prototype::isFrozen
+    (bool) \arc\prototype::isFrozen( (object) $prototype )
+
+Returns true if this object is frozen and thus immutable.
+
+###\arc\prototype::seal
+    (void) \arc\prototype::seal( (object) $prototype )
+
+This makes the object incapable of adding or removing properties, or
+reconfiguring them. The object is no longer open to extensions as well.
+The only way to unseal it is to clone it. The clone will be unsealed and
+open to extension.
+
+###\arc\prototype::isSealed
+    (bool) \arc\prototype::isSealed( (object) $prototype )
+
+Returns true if this object is sealed and properties can no longer be
+reconfigured, added or deleted. 
+
+###\arc\prototype::preventExtensions
+    (void) \arc\prototype::preventExtensions( (object) $prototype )
+
+This makes the object incapable of adding properties or extending it.
+
+###\arc\prototype::isExtensible
+    (bool) \arc\prototype::isExtensible( (object) $prototype )
+
+Returns true if this object is open to extensions.
 
 ###\arc\prototype::observe
     (void) \arc\prototype::observe( (object) $prototype, (Closure) $f )
@@ -267,12 +299,30 @@ If the closure returns false exactly (no other 'falsy' values will work), the ch
 
 This removes a specific observer function from a Prototype object. You must pass the exact same closure for this to work.
 
+###\arc\prototype::getObservers
 
 ###\arc\prototype::hasProperty
     (bool) \arc\prototype::hasProperty( (string) $propertyName )
 
 Returns true if the requested property is available on the current Prototype object itself or any of its prototypes.
 
+###\arc\prototype::keys
+    (array) \arc\prototype::keys( (object) $prototype )
+
+###\arc\prototype::values
+    (array) \arc\prototype::values( (object) $prototype )
+
+###\arc\prototype::entries
+    (array) \arc\prototype::entries( (object) $prototype )
+
+###\arc\prototype::ownKeys
+    (array) \arc\prototype::ownKeys( (object) $prototype )
+
+###\arc\prototype::ownValues
+    (array) \arc\prototype::ownValues( (object) $prototype )
+
+###\arc\prototype::ownEntries
+    (array) \arc\prototype::ownEntries( (object) $prototype )
 
 ###\arc\prototype::hasOwnProperty
     (bool) \arc\prototype::hasOwnProperty( (string) $propertyName )
@@ -280,12 +330,19 @@ Returns true if the requested property is available on the current Prototype obj
 Returns true if the requested property is available on the current Prototype object itself without checking its prototype chain.
 
 
-
 ###\arc\prototype::hasPrototype
     (bool) \arc\prototype::hasPrototype( (string) $prototypeObject )
 
 Returns true if the given object is part of the prototype chain of the current Prototype object.
 
+###\arc\prototype::getDescendants
+    (array) \arc\prototype::getDescendants( (object) $prototype )
+
+###\arc\prototype::getInstances
+    (array) \arc\prototype::getInstances( (object) $prototype )
+
+###\arc\prototype::getPrototypes
+    (array) \arc\prototype::getPrototypes( (object) $prototype )
 
 ###\arc\prototype::memoize
     (Closure) \arc\prototype::memoize( (callable) $f )
