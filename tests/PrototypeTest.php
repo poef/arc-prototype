@@ -110,18 +110,22 @@
         function testObserve()
         {
             $foo = \arc\prototype::create([]);
-            $f = function($ob, $name, $value) {
-                return false;
+			$log = [];
+            $f = function($changes) use (&$log) {
+				$log[] = $changes;
             };
             \arc\prototype::observe($foo, $f);
             $foo->bar = 'bar';
-            $this->assertArrayNotHasKey('bar', \arc\prototype::entries($foo));
-            \arc\prototype::unobserve($foo, $f);
-            $foo->bar = 'bar';
-            $this->assertEquals($foo->bar, 'bar');
-            \arc\prototype::observe($foo, $f);
-            $foo->bar = 'baz';
-            $this->assertEquals($foo->bar, 'bar');
+            $this->assertEquals( 'bar', $log[0]['name']);
+            $this->assertEquals( 'add', $log[0]['type']);
+			$foo->bar = 'foo';
+            $this->assertEquals( 'bar', $log[1]['name']);
+            $this->assertEquals( 'update', $log[1]['type']);
+            $this->assertEquals( 'bar', $log[1]['oldValue']);
+			unset($foo->bar);
+            $this->assertEquals( 'bar', $log[2]['name']);
+            $this->assertEquals( 'delete', $log[2]['type']);
+            $this->assertEquals( 'foo', $log[2]['oldValue']);
         }
 
         function testFreeze()
@@ -130,9 +134,6 @@
             \arc\prototype::freeze($foo);
             $foo->bar = 'bar';
             $this->assertArrayNotHasKey('bar', \arc\prototype::entries($foo));
-            \arc\prototype::unfreeze($foo);
-            $foo->bar = 'bar';
-            $this->assertEquals($foo->bar, 'bar');
         }
 
         function testNotExtendable()
@@ -166,5 +167,61 @@
             $this->assertEquals($zoom->zod, $zod->zod);
         }
 
+        function testGetter()
+        {
+            $foo = \arc\prototype::create([
+                'bar' => [
+                    'get' => function() {
+                        return 'Bar';
+                    }
+                ]
+            ]);
+            $bar = $foo->bar;
+            $this->assertEquals('Bar', $bar);
+            $foo->bar = 'Foo';
+            $this->assertEquals('Bar', $bar);
+        }
+
+        function testSetter()
+        {
+            $bar = new StdClass();
+            $bar->bar = 'BarBar';
+            $foo = \arc\prototype::create([
+                'bar' => [
+                    'set' => function($value) use ($bar) {
+                        $bar->bar = $value.'Bar';
+                    },
+                    'get' => function() use ($bar) {
+                        return $bar->bar;
+                    }
+                ]
+            ]);
+            $result = $foo->bar;
+            $this->assertEquals('BarBar', $result);
+            $foo->bar = 'Foo';
+            $result = $foo->bar;
+            $this->assertEquals('FooBar', $result);
+        }
+
+        function testStaticGetterSetter()
+        {
+            $bar = new StdClass();
+            $bar->bar = 'BarBar';
+            $foo = \arc\prototype::create([
+                'bar' => [
+                    ':set' => static function($self, $value) use ($bar) {
+                        $bar->bar = $value.'Bar';
+                    },
+                    ':get' => static function($self) use ($bar) {
+                        return 'Foo'.$bar->bar;
+                    }
+                ]
+            ]);
+            $result = $foo->bar;
+            $this->assertEquals('FooBarBar', $result);
+            $foo->bar = 'Foo';
+            $result = $foo->bar;
+            $this->assertEquals('FooFooBar', $result);            
+        }
 
     }
