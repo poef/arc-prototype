@@ -17,7 +17,7 @@ namespace arc\prototype;
  */
 final class Object
 {
-    /** 
+    /**
      * @var array cache for prototype properties
      */
     private static $properties = [];
@@ -104,12 +104,12 @@ final class Object
                             return $getter();
                         } else if ( isset($property[':get']) && is_callable($property[':get']) ) {
                             return $property[':get']($this);
-                        } else if ( (isset($property['set']) && is_callable($property['set']) ) 
+                        } else if ( (isset($property['set']) && is_callable($property['set']) )
                             || ( isset($property[':set']) && is_callable($property[':set']) ) ) {
                             return null;
                         }
                     }
-                    return $property;    
+                    return $property;
                 }
                 return $this->_getPrototypeProperty( $name );
             break;
@@ -119,8 +119,8 @@ final class Object
     private function _isGetterOrSetter($property) {
         return (
             isset($property)
-            && is_array($property) 
-            && ( 
+            && is_array($property)
+            && (
                  ( isset($property['get']) && is_callable($property['get']) )
                 || ( isset($property[':get']) && is_callable($property[':get']) )
                 || ( isset($property['set']) && is_callable($property['set']) )
@@ -142,7 +142,7 @@ final class Object
             return;
         }
         $valueIsSetterOrGetter = $this->_isGetterOrSetter($value);
-        $propertyIsSetterOrGetter = (isset($this->_ownProperties[$name]) 
+        $propertyIsSetterOrGetter = (isset($this->_ownProperties[$name])
             ? $this->_isGetterOrSetter($this->_ownProperties[$name])
             : false
         );
@@ -178,7 +178,7 @@ final class Object
         } else if (isset($current) && isset($current[':set']) && is_callable($current[':set'])) {
             // nonbindable setter found
             $current[':set']($this, $value);
-        } else if (isset($current) && ( 
+        } else if (isset($current) && (
             (isset($current['get']) && is_callable($current['get']) )
             || (isset($current[':get']) && is_callable($current[':get']) ) )
         ) {
