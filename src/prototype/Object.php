@@ -295,7 +295,7 @@ final class Object
                     'oldValue' => $oldValue
                 ];
                 foreach ($observers['delete'] as $observer) {
-                    $result = $observer($changes);
+                    $observer($changes);
                 }
             }
         }
