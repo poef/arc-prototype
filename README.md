@@ -1,3 +1,13 @@
+ARC: Ariadne Component Library 
+==============================
+
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/Ariadne-CMS/arc-prototype/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/Ariadne-CMS/arc-prototype/?branch=master)
+[![Code Coverage](https://scrutinizer-ci.com/g/Ariadne-CMS/arc-prototype/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/Ariadne-CMS/arc-prototype/)
+[![Latest Stable Version](https://poser.pugx.org/arc/prototype/v/stable.svg)](https://packagist.org/packages/arc/prototype)
+[![Total Downloads](https://poser.pugx.org/arc/prototype/downloads.svg)](https://packagist.org/packages/arc/prototype)
+[![Latest Unstable Version](https://poser.pugx.org/arc/prototype/v/unstable.svg)](https://packagist.org/packages/arc/prototype)
+[![License](https://poser.pugx.org/arc/prototype/license.svg)](https://packagist.org/packages/arc/prototype)
+
 arc/prototype
 =============
 
