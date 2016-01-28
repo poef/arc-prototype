@@ -14,7 +14,7 @@ namespace arc;
  * which is useful when using a prototype object as a Dependency Injection container.
  * @package arc
  */
-final class prototype 
+final class prototype
 {
 
     /**
@@ -43,13 +43,13 @@ final class prototype
     private static $observers = null;
 
     /**
-     * Returns a new \arc\prototype\Object object with the given properties. The 
-     * properties array may contain closures, these will be available as methods on 
+     * Returns a new \arc\prototype\Object object with the given properties. The
+     * properties array may contain closures, these will be available as methods on
      * the new Prototype object.
      * @param array $properties List of properties and methods
      * @return \arc\prototype\Object
      */
-    public static function create($properties) 
+    public static function create($properties)
     {
         return new prototype\Object($properties);
     }
@@ -61,7 +61,7 @@ final class prototype
      * @param array $properties List of properties and methods
      * @return \arc\prototype\Object
      */
-    public static function extend($prototype, $properties) 
+    public static function extend($prototype, $properties)
     {
         if ( self::isExtensible($prototype) ) {
             if (!isset(self::$instances)) {
@@ -85,7 +85,7 @@ final class prototype
      * Helper method to remove cache information when a prototype is no longer needed.
      * @param \arc\prototype\Object $obj The object to be removed
      */
-    public static function _destroy($obj) 
+    public static function _destroy($obj)
     {
         unset(self::$notExtensible[$obj]);
         unset(self::$sealed[$obj]);
@@ -97,14 +97,14 @@ final class prototype
     }
 
     /**
-     * Returns a new \arc\prototype\Object with the given prototype set. In addition 
-     * all properties on the extra objects passed to this method will be copied to the 
-     * new Prototype object. For any property that is set on multiple objects, the value 
+     * Returns a new \arc\prototype\Object with the given prototype set. In addition
+     * all properties on the extra objects passed to this method will be copied to the
+     * new Prototype object. For any property that is set on multiple objects, the value
      * of the property in the later object overwrites values from other objects.
      * @param \arc\prototype\Object $prototype the prototype for the new object
      * @param \arc\prototype\Object ...$object the objects whose properties will be assigned
      */
-    public static function assign($prototype) 
+    public static function assign($prototype)
     {
         $objects = func_get_args();
         array_shift($objects);
@@ -116,11 +116,11 @@ final class prototype
     }
 
     /**
-     * This makes changes to the given Prototype object impossible. 
+     * This makes changes to the given Prototype object impossible.
      * The object becomes immutable. Any attempt to change the object will silently fail.
      * @param \arc\prototype\Object $prototype the object to freeze
      */
-    public static function freeze($prototype) 
+    public static function freeze($prototype)
     {
         if (!isset(self::$frozen)) {
             self::$frozen = new \SplObjectStorage();
@@ -133,7 +133,7 @@ final class prototype
      * This prevents reconfiguring an object or adding new properties.
      * @param \arc\prototype\Object $prototype the object to freeze
      */
-    public static function seal($prototype) 
+    public static function seal($prototype)
     {
         if (!isset(self::$sealed)) {
             self::$sealed = new \SplObjectStorage();
@@ -147,7 +147,7 @@ final class prototype
      * @param \arc\prototype\Object $prototype
      * @return array
      */
-    public static function keys($prototype) 
+    public static function keys($prototype)
     {
         $entries = static::entries($prototype);
         return array_keys($entries);
@@ -158,7 +158,7 @@ final class prototype
      * @param \arc\prototype\Object $prototype
      * @return array
      */
-    public static function entries($prototype) 
+    public static function entries($prototype)
     {
         return $prototype->properties;
     }
@@ -168,7 +168,7 @@ final class prototype
      * @param \arc\prototype\Object $prototype
      * @return array
      */
-    public static function values($prototype) 
+    public static function values($prototype)
     {
         $entries = static::entries($prototype);
         return array_values($entries);
@@ -180,7 +180,7 @@ final class prototype
      * @param string $property
      * @return bool
      */
-    public static function hasProperty($prototype, $property) 
+    public static function hasProperty($prototype, $property)
     {
         $entries = static::entries($prototype);
         return array_key_exists($property, $entries);
@@ -192,7 +192,7 @@ final class prototype
      * @param \arc\prototype\Object $prototype
      * @return array
      */
-    public static function ownKeys($prototype) 
+    public static function ownKeys($prototype)
     {
         $entries = static::ownEntries($prototype);
         return array_keys($entries);
@@ -204,7 +204,7 @@ final class prototype
      * @param \arc\prototype\Object $prototype
      * @return array
      */
-    public static function ownEntries($prototype) 
+    public static function ownEntries($prototype)
     {
         return \arc\_getOwnEntries($prototype);
     }
@@ -215,7 +215,7 @@ final class prototype
      * @param \arc\prototype\Object $prototype
      * @return array
      */
-    public static function ownValues($prototype) 
+    public static function ownValues($prototype)
     {
         $entries = static::ownEntries($prototype);
         return array_values($entries);
@@ -228,7 +228,7 @@ final class prototype
      * @param string $property
      * @return bool
      */
-    public static function hasOwnProperty($prototype, $property) 
+    public static function hasOwnProperty($prototype, $property)
     {
         $entries = static::ownEntries($prototype);
         return array_key_exists($property, $entries);
@@ -239,7 +239,7 @@ final class prototype
      * @param \arc\prototype\Object $prototype
      * @return bool
      */
-    public static function isFrozen($prototype) 
+    public static function isFrozen($prototype)
     {
         return isset(self::$frozen[$prototype]);
     }
@@ -249,7 +249,7 @@ final class prototype
      * @param \arc\prototype\Object $prototype
      * @return bool
      */
-    public static function isSealed($prototype) 
+    public static function isSealed($prototype)
     {
         return isset(self::$sealed[$prototype]);
     }
@@ -259,21 +259,21 @@ final class prototype
      * @param \arc\prototype\Object $prototype
      * @return bool
      */
-    public static function isExtensible($prototype) 
+    public static function isExtensible($prototype)
     {
         return !isset(self::$notExtensible[$prototype]);
     }
 
     /**
-     * This calls the $callback function each time a property of $prototype is 
-     * changed or unset. The callback is called with the prototype object, the 
+     * This calls the $callback function each time a property of $prototype is
+     * changed or unset. The callback is called with the prototype object, the
      * name of the property and the new value (null if unset).
-     * If the closure returns false exactly (no other 'falsy' values will work), 
+     * If the closure returns false exactly (no other 'falsy' values will work),
      * the change will be cancelled
      * @param \arc\prototype\Object $prototype
      * @param \Closure $callback
      */
-    public static function observe($prototype, $callback, $acceptList=null) 
+    public static function observe($prototype, $callback, $acceptList=null)
     {
         if ( !isset(self::$observers) ) {
             self::$observers = new \SplObjectStorage();
@@ -299,7 +299,7 @@ final class prototype
      * @param \arc\prototype\Object $prototype
      * @return array
      */
-    public static function getObservers($prototype) 
+    public static function getObservers($prototype)
     {
         return (isset(self::$observers[$prototype]) ? self::$observers[$prototype] : [] );
     }
@@ -308,7 +308,7 @@ final class prototype
      * Makes an object no longer extensible.
      * @param \arc\prototype\Object $prototype
      */
-    public static function preventExtensions($prototype) 
+    public static function preventExtensions($prototype)
     {
         if ( !isset(self::$notExtensible) ) {
             self::$notExtensible = new \SplObjectStorage();
@@ -321,7 +321,7 @@ final class prototype
      * @param \arc\prototype\Prototyp $prototype
      * @param \Closure $callback the observer callback to be removed
      */
-    public static function unobserve($prototype, $callback) 
+    public static function unobserve($prototype, $callback)
     {
         if ( isset(self::$observers) && isset(self::$observers[$prototype]) ) {
             unset(self::$observers[$prototype][$callback]);
@@ -332,7 +332,7 @@ final class prototype
      * Returns true if the object as the given prototype somewhere in its
      * prototype chain, including itself.
      */
-    public static function hasPrototype($obj, $prototype) 
+    public static function hasPrototype($obj, $prototype)
     {
         if (!$obj->prototype) {
             return false;
@@ -350,7 +350,7 @@ final class prototype
      * @param \arc\prototype\Object $prototype
      * @return array
      */
-    public static function getDescendants($prototype) 
+    public static function getDescendants($prototype)
     {
         $instances = self::getInstances($prototype);
         $descendants = $instances;
@@ -366,7 +366,7 @@ final class prototype
      * @param \arc\prototype\Object $prototype
      * @return array
      */
-    public static function getInstances($prototype) 
+    public static function getInstances($prototype)
     {
         return (isset(self::$instances[$prototype]) ? self::$instances[$prototype] : [] );
     }
@@ -376,7 +376,7 @@ final class prototype
      * @param \arc\prototype\Object $obj
      * @return array
      */
-    public static function getPrototypes($obj) 
+    public static function getPrototypes($obj)
     {
         $prototypes = [];
         while ( $prototype = $obj->prototype ) {
@@ -391,7 +391,7 @@ final class prototype
      * returns its result on each subsequent call.
      * @param callable function to call just once and then remember the result
      */
-    public static function memoize($f) 
+    public static function memoize($f)
     {
         return memoize($f);
     }
@@ -401,7 +401,7 @@ final class prototype
  * Helper function to make sure that the returned Closure is not defined in a static scope.
  * @param callable function to call just once and then remember the result
  */
-function memoize($f) 
+function memoize($f)
 {
     return function () use ($f) {
         static $result;
