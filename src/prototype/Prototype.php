@@ -12,10 +12,10 @@ namespace arc\prototype;
 /**
  * Implements a class of objects with prototypical inheritance, getters/setters, and observable changes
  * very similar to EcmaScript objects
- * @property \arc\prototype\Object $prototype The prototype for this object
+ * @property \arc\prototype\Prototype $prototype The prototype for this object
  * @property array $properties
  */
-final class Object
+final class Prototype
 {
     /** 
      * @var array cache for prototype properties
@@ -33,7 +33,7 @@ final class Object
     private $_staticMethods = [];
 
     /**
-    * @var Object prototype Readonly reference to a prototype object. Can only be set in the constructor.
+    * @var Prototype prototype Readonly reference to a prototype object. Can only be set in the constructor.
     */
     private $prototype = null;
 
@@ -84,7 +84,7 @@ final class Object
 
     /**
      * @param $name
-     * @return array|null|Object
+     * @return array|null|Prototype
      */
     public function __get($name)
     {
