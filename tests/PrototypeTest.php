@@ -9,7 +9,7 @@
      * file that was distributed with this source code.
      */
 
-    class PrototypeTest extends PHPUnit_Framework_TestCase
+    class PrototypeTest extends PHPUnit\Framework\TestCase
     {
         function testPrototype()
         {
@@ -90,6 +90,17 @@
             $this->assertEquals( 'foobar', $tst);
         }
 
+        function testInvoke()
+        {
+            $foo = \arc\prototype::create([
+                '__invoke' => function () {
+                    return 'foobar';
+                }
+            ]);
+            $result = $foo();
+            $this->assertEquals('foobar', $result);
+        }
+
         function testStatic() 
         {
             $foo = \arc\prototype::create([
@@ -124,6 +135,7 @@
 
         function testFreeze()
         {
+            $this->expectException(\LogicException::class);
             $foo = \arc\prototype::create([]);
             \arc\prototype::freeze($foo);
             $foo->bar = 'bar';
@@ -132,6 +144,7 @@
 
         function testNotExtendable()
         {
+            $this->expectException(\LogicException::class);
             $foo = \arc\prototype::create([
                 'bar' => 'Bar'
             ]);
@@ -172,6 +185,7 @@
             ]);
             $bar = $foo->bar;
             $this->assertEquals('Bar', $bar);
+            $this->expectException(\LogicException::class);
             $foo->bar = 'Foo';
             $this->assertEquals('Bar', $bar);
         }

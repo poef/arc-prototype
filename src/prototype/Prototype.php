@@ -61,7 +61,7 @@ final class Prototype
      * @param $name
      * @param $args
      * @return mixed
-     * @throws \arc\ExceptionMethodNotFound
+     * @throws \BadMethodCallException
      */
     public function __call($name, $args)
     {
@@ -79,7 +79,7 @@ final class Prototype
                 return call_user_func_array( $method, $args );
             }
         }
-        throw new \arc\ExceptionMethodNotFound( $name.' is not a method on this Object', \arc\exceptions::OBJECT_NOT_FOUND );
+        throw new \BadMethodCallException( $name.' is not a method on this Object');
     }
 
     /**
@@ -132,13 +132,16 @@ final class Prototype
     /**
      * @param $name
      * @param $value
+     * @throws \LogicException
      */
     public function __set($name, $value)
     {
         if (in_array( $name, [ 'prototype', 'properties' ] )) {
+            throw new \LogicException('Property "'.$name.'" is read only.');
             return;
         }
         if ( !isset($this->_ownProperties[$name]) && !\arc\prototype::isExtensible($this) ) {
+            throw new \LogicException('Object is not extensible.');
             return;
         }
         $valueIsSetterOrGetter = $this->_isGetterOrSetter($value);
@@ -147,6 +150,7 @@ final class Prototype
             : false
         );
         if ( \arc\prototype::isSealed($this) && $valueIsSetterOrGetter!=$propertyIsSetterOrGetter ) {
+            throw new \LogicException('Object is sealed.');
             return;
         }
         $changes = [];
@@ -171,18 +175,33 @@ final class Prototype
             $clearcache = true;
             $this->_ownProperties[$name] = $value;
             unset($this->_staticMethods[$name]);
-        } else if (isset($current) && isset($current['set']) && is_callable($current['set'])) {
+        } else if (
+            isset($current)
+            && (is_array($current) || $current instanceof \ArrayAccess) 
+            && isset($current['set']) 
+            && is_callable($current['set'])
+        ) {
             // bindable setter found, use it, no need to set anything in _ownProperties
             $setter = \Closure::bind($current['set'], $this, $this);
             $setter($value);
-        } else if (isset($current) && isset($current[':set']) && is_callable($current[':set'])) {
+        } else if (
+            isset($current) 
+            && (is_array($current) || $current instanceof \ArrayAccess) 
+            && isset($current[':set']) 
+            && is_callable($current[':set'])
+        ) {
             // nonbindable setter found
             $current[':set']($this, $value);
-        } else if (isset($current) && ( 
-            (isset($current['get']) && is_callable($current['get']) )
-            || (isset($current[':get']) && is_callable($current[':get']) ) )
+        } else if (
+            isset($current) 
+            && (is_array($current) || $current instanceof \ArrayAccess) 
+            && ( 
+                (isset($current['get']) && is_callable($current['get']) )
+                || (isset($current[':get']) && is_callable($current[':get']) )
+            )
         ) {
             // there is only a getter, no setter, so ignore setting this property, its readonly.
+            throw new \LogicException('Property "'.$name.'" is readonly.');
             return null;
         } else if (!array_key_exists($name, $this->_staticMethods)) {
             // bindable value, update _ownProperties, so clearcache as well
@@ -272,6 +291,7 @@ final class Prototype
 
     /**
      * @param $name
+     * @throws \LogicException
      */
     public function __unset($name) {
         if (!in_array( $name, [ 'prototype', 'properties' ] )) {
@@ -294,7 +314,11 @@ final class Prototype
                 foreach ($observers['delete'] as $observer) {
                     $result = $observer($changes);
                 }
+            } else {
+                throw new \LogicException('Object is sealed.');
             }
+        } else {
+            throw new \LogicException('Property "'.$name.'" is protected.');
         }
     }
 
@@ -317,14 +341,14 @@ final class Prototype
 
     /**
      * @return mixed
-     * @throws \arc\ExceptionMethodNotFound
+     * @throws \BadMethodCallException
      */
     public function __invoke()
     {
         if (is_callable( $this->__invoke )) {
             return call_user_func_array( $this->__invoke, func_get_args() );
         } else {
-            throw new \arc\ExceptionMethodNotFound( 'No __invoke method found in this Object', \arc\exceptions::OBJECT_NOT_FOUND );
+            throw new \BadMethodCallException( 'No __invoke method found in this Object' );
         }
     }
 
