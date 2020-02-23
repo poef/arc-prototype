@@ -75,19 +75,15 @@
             $this->assertEquals( $bar->foo(), '<b>foobar</b>' );
         }
 
-
-        function testToString()
+        function testStatic() 
         {
             $foo = \arc\prototype::create([
-                'foofoo' => function () {
-                    return 'foofoo';
-                },
-                '__toString' => function () {
-                    return 'foobar';
-                },
+                'bar' => 'Bar',
+                ':foo' => static function($self) {
+                    return $self->bar;
+                }
             ]);
-            $tst = (string)$foo;
-            $this->assertEquals( 'foobar', $tst);
+            $this->assertEquals( $foo->foo(), 'Bar');
         }
 
         function testInvoke()
@@ -101,15 +97,25 @@
             $this->assertEquals('foobar', $result);
         }
 
-        function testStatic() 
+        function testToString()
         {
             $foo = \arc\prototype::create([
+                '__toString' => function() {
+                    return 'Foo';
+                }
+            ]);
+            $this->assertEquals('Foo', (string) $foo);
+        }
+        
+        function testStaticToString()
+        {            
+            $bar = \arc\prototype::create([
                 'bar' => 'Bar',
-                ':foo' => static function($self) {
+                ':__toString' => static function($self) {
                     return $self->bar;
                 }
             ]);
-            $this->assertEquals( $foo->foo(), 'Bar');
+            $this->assertEquals('Bar', $bar.'');
         }
 
         function testObserve()

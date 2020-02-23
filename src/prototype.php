@@ -14,7 +14,7 @@ namespace arc;
  * which is useful when using a prototype object as a Dependency Injection container.
  * @package arc
  */
-final class prototype 
+final class prototype
 {
 
     /**
@@ -43,8 +43,13 @@ final class prototype
     private static $observers = null;
 
     /**
+<<<<<<< HEAD
      * Returns a new \arc\prototype\Prototype object with the given properties. The 
      * properties array may contain closures, these will be available as methods on 
+=======
+     * Returns a new \arc\prototype\Object object with the given properties. The
+     * properties array may contain closures, these will be available as methods on
+>>>>>>> ariadne/master
      * the new Prototype object.
      * @param array $properties List of properties and methods
      * @return \arc\prototype\Prototype
@@ -98,9 +103,15 @@ final class prototype
     }
 
     /**
+<<<<<<< HEAD
      * Returns a new \arc\prototype\Prototype with the given prototype set. In addition 
      * all properties on the extra objects passed to this method will be copied to the 
      * new Prototype object. For any property that is set on multiple objects, the value 
+=======
+     * Returns a new \arc\prototype\Object with the given prototype set. In addition
+     * all properties on the extra objects passed to this method will be copied to the
+     * new Prototype object. For any property that is set on multiple objects, the value
+>>>>>>> ariadne/master
      * of the property in the later object overwrites values from other objects.
      * @param \arc\prototype\Prototype $prototype the prototype for the new object
      * @param \arc\prototype\Prototype ...$object the objects whose properties will be assigned
@@ -115,7 +126,7 @@ final class prototype
     }
 
     /**
-     * This makes changes to the given Prototype object impossible. 
+     * This makes changes to the given Prototype object impossible.
      * The object becomes immutable. Any attempt to change the object will silently fail.
      * @param \arc\prototype\Prototype $prototype the object to freeze
      */
@@ -264,10 +275,10 @@ final class prototype
     }
 
     /**
-     * This calls the $callback function each time a property of $prototype is 
-     * changed or unset. The callback is called with the prototype object, the 
+     * This calls the $callback function each time a property of $prototype is
+     * changed or unset. The callback is called with the prototype object, the
      * name of the property and the new value (null if unset).
-     * If the closure returns false exactly (no other 'falsy' values will work), 
+     * If the closure returns false exactly (no other 'falsy' values will work),
      * the change will be cancelled
      * @param \arc\prototype\Prototype $prototype
      * @param \Closure $callback

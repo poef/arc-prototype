@@ -17,7 +17,7 @@ namespace arc\prototype;
  */
 final class Prototype
 {
-    /** 
+    /**
      * @var array cache for prototype properties
      */
     private static $properties = [];
@@ -104,12 +104,12 @@ final class Prototype
                             return $getter();
                         } else if ( isset($property[':get']) && is_callable($property[':get']) ) {
                             return $property[':get']($this);
-                        } else if ( (isset($property['set']) && is_callable($property['set']) ) 
+                        } else if ( (isset($property['set']) && is_callable($property['set']) )
                             || ( isset($property[':set']) && is_callable($property[':set']) ) ) {
                             return null;
                         }
                     }
-                    return $property;    
+                    return $property;
                 }
                 return $this->_getPrototypeProperty( $name );
             break;
@@ -119,8 +119,8 @@ final class Prototype
     private function _isGetterOrSetter($property) {
         return (
             isset($property)
-            && is_array($property) 
-            && ( 
+            && is_array($property)
+            && (
                  ( isset($property['get']) && is_callable($property['get']) )
                 || ( isset($property[':get']) && is_callable($property[':get']) )
                 || ( isset($property['set']) && is_callable($property['set']) )
@@ -145,7 +145,7 @@ final class Prototype
             return;
         }
         $valueIsSetterOrGetter = $this->_isGetterOrSetter($value);
-        $propertyIsSetterOrGetter = (isset($this->_ownProperties[$name]) 
+        $propertyIsSetterOrGetter = (isset($this->_ownProperties[$name])
             ? $this->_isGetterOrSetter($this->_ownProperties[$name])
             : false
         );
@@ -284,9 +284,12 @@ final class Prototype
      */
     public function __isset($name)
     {
-        $val = $this->_getPrototypeProperty( $name );
-
-        return isset( $val );
+        if ( array_key_exists($name, $this->_ownProperties) ) {
+            return isset($this->_ownProperties[$name]);
+        } else {
+            $val = $this->_getPrototypeProperty( $name );
+            return isset( $val );
+        }
     }
 
     /**
@@ -312,7 +315,7 @@ final class Prototype
                     'oldValue' => $oldValue
                 ];
                 foreach ($observers['delete'] as $observer) {
-                    $result = $observer($changes);
+                    $observer($changes);
                 }
             } else {
                 throw new \LogicException('Object is sealed.');
@@ -327,8 +330,8 @@ final class Prototype
      */
     public function __destruct()
     {
-        \arc\prototype::_destroy($this);
-        return $this->_tryToCall( $this->__destruct );
+    	\arc\prototype::_destroy($this);
+        return $this->_tryToCall( '__destruct' );
     }
 
     /**
@@ -336,7 +339,7 @@ final class Prototype
      */
     public function __toString()
     {
-        return $this->_tryToCall( $this->__toString );
+        return (string) $this->_tryToCall( '__toString' );
     }
 
     /**
@@ -387,10 +390,13 @@ final class Prototype
      * @param array $args
      * @return mixed
      */
-    private function _tryToCall($f, $args = [])
+    private function _tryToCall($name, $args = [])
     {
-        if (is_callable( $f )) {
-            return call_user_func_array( $f, $args );
+        if ( isset($this->{$name}) && is_callable( $this->{$name} )) {
+            if ( array_key_exists($name, $this->_staticMethods) ) {
+                array_unshift($args, $this);
+            }
+            return call_user_func_array( $this->{$name}, $args );
         }
     }
 }
