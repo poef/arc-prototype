@@ -15,7 +15,7 @@ namespace arc\prototype;
  * @property \arc\prototype\Prototype $prototype The prototype for this object
  * @property array $properties
  */
-final class Prototype
+final class Prototype implements \JsonSerializable
 {
     /**
      * @var array cache for prototype properties
@@ -367,6 +367,15 @@ final class Prototype
             }
         }
         $this->_tryToCall( '__clone' );
+    }
+
+    public function jsonSerialize() {
+        $result = $this->_tryToCall( '__toJSON' );
+        if (!$result) {
+            return \arc\prototype::entries($this);
+        } else {
+            return $result;
+        }
     }
 
     /**

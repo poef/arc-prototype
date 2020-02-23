@@ -43,13 +43,8 @@ final class prototype
     private static $observers = null;
 
     /**
-<<<<<<< HEAD
      * Returns a new \arc\prototype\Prototype object with the given properties. The 
      * properties array may contain closures, these will be available as methods on 
-=======
-     * Returns a new \arc\prototype\Object object with the given properties. The
-     * properties array may contain closures, these will be available as methods on
->>>>>>> ariadne/master
      * the new Prototype object.
      * @param array $properties List of properties and methods
      * @return \arc\prototype\Prototype
@@ -98,20 +93,18 @@ final class prototype
         unset(self::$frozen[$obj]);
         unset(self::$observers[$obj]);
         if ( isset($obj->prototype) ) {
-            unset(self::$instances[$obj->prototype][$obj]);
+            $p = self::$instances[$obj->prototype];
+            $p = array_filter($p, function($o) use ($obj) {
+                return $o != $obj; // remove references to $obj
+            });
+            self::$instances[$obj->prototype] = $p;
         }
     }
 
     /**
-<<<<<<< HEAD
      * Returns a new \arc\prototype\Prototype with the given prototype set. In addition 
      * all properties on the extra objects passed to this method will be copied to the 
      * new Prototype object. For any property that is set on multiple objects, the value 
-=======
-     * Returns a new \arc\prototype\Object with the given prototype set. In addition
-     * all properties on the extra objects passed to this method will be copied to the
-     * new Prototype object. For any property that is set on multiple objects, the value
->>>>>>> ariadne/master
      * of the property in the later object overwrites values from other objects.
      * @param \arc\prototype\Prototype $prototype the prototype for the new object
      * @param \arc\prototype\Prototype ...$object the objects whose properties will be assigned

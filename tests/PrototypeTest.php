@@ -238,4 +238,22 @@
             $this->assertEquals('FooFooBar', $result);            
         }
 
+        function testIntrospection()
+        {
+            $foo = \arc\prototype::create( [
+                'foo' => 'bar',
+                'bar' => function () {
+                    return $this->foo;
+                }
+            ]);
+            $bar = \arc\prototype::extend( $foo, [
+                'foo' => 'rab'
+            ]);
+            $this->assertTrue(\arc\prototype::hasPrototype($bar, $foo));
+            $prototypes = \arc\prototype::getPrototypes($bar);
+            $this->assertEquals($prototypes[0], $foo);
+            $instances = \arc\prototype::getInstances($foo);
+            $this->assertEquals($instances[0], $bar);
+        }
+
     }
