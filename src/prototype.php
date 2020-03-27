@@ -60,26 +60,21 @@ final class prototype
      * @param \arc\prototype\Prototype $prototype The prototype for this object
      * @param array $properties List of properties and methods
      * @return \arc\prototype\Prototype
-     * @throws \invalidArgumentException
      */
     public static function extend(prototype\Prototype $prototype, array $properties) :prototype\Prototype
     {
-        if ( self::isExtensible($prototype) ) {
-            if (!isset(self::$instances)) {
-                self::$instances = new \SplObjectStorage();
-            };
-            if (!isset(self::$instances[$prototype])) {
-                self::$instances[$prototype] = [];
-            }
-            $properties['prototype'] = $prototype;
-            $instance = new prototype\Prototype($properties);
-            $list = self::$instances[$prototype];
-            array_push($list,$instance);
-            self::$instances[$prototype] = $list;
-            return $instance;
-        } else {
-            throw new \InvalidArgumentException('Object is not extensible.');
-       }
+        if (!isset(self::$instances)) {
+            self::$instances = new \SplObjectStorage();
+        };
+        if (!isset(self::$instances[$prototype])) {
+            self::$instances[$prototype] = [];
+        }
+        $properties['prototype'] = $prototype;
+        $instance = new prototype\Prototype($properties);
+        $list = self::$instances[$prototype];
+        array_push($list,$instance);
+        self::$instances[$prototype] = $list;
+        return $instance;
     }
 
     /**

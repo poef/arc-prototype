@@ -145,7 +145,7 @@
             $foo = \arc\prototype::create([]);
             \arc\prototype::freeze($foo);
             $foo->bar = 'bar';
-            $this->assertArrayNotHasKey('bar', \arc\prototype::entries($foo));
+            $this->assertFalse(\arc\prototype::hasOwnProperty($foo,'bar'));
         }
 
         function testNotExtendable()
@@ -155,10 +155,11 @@
                 'bar' => 'Bar'
             ]);
             \arc\prototype::preventExtensions($foo);
-            $bar = \arc\prototype::extend($foo, [
-                'foo' => 'Foo'
-            ]);
-            $this->assertNull($bar);
+            $foo->baz = 'Baz';
+            $this->assertFalse(\arc\prototype::hasOwnProperty($foo,'baz'));
+            $baz = \arc\prototype::extend($foo);
+            $baz->baz = 'Baz';
+            $this->assertEquals($baz->baz, 'Baz');
         }
 
         function testAssign()
