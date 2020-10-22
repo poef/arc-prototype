@@ -138,11 +138,9 @@ final class Prototype implements \JsonSerializable
     {
         if (in_array( $name, [ 'prototype', 'properties' ] )) {
             throw new \LogicException('Property "'.$name.'" is read only.');
-            return;
         }
         if ( !isset($this->_ownProperties[$name]) && !\arc\prototype::isExtensible($this) ) {
             throw new \LogicException('Object is not extensible.');
-            return;
         }
         $valueIsSetterOrGetter = $this->_isGetterOrSetter($value);
         $propertyIsSetterOrGetter = (isset($this->_ownProperties[$name])
@@ -151,7 +149,6 @@ final class Prototype implements \JsonSerializable
         );
         if ( \arc\prototype::isSealed($this) && $valueIsSetterOrGetter!=$propertyIsSetterOrGetter ) {
             throw new \LogicException('Object is sealed.');
-            return;
         }
         $changes = [];
         $changes['name'] = $name;
@@ -202,7 +199,6 @@ final class Prototype implements \JsonSerializable
         ) {
             // there is only a getter, no setter, so ignore setting this property, its readonly.
             throw new \LogicException('Property "'.$name.'" is readonly.');
-            return null;
         } else if (!array_key_exists($name, $this->_staticMethods)) {
             // bindable value, update _ownProperties, so clearcache as well
             $clearcache = true;
