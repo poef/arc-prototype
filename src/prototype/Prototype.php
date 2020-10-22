@@ -135,7 +135,7 @@ final class Prototype implements \JsonSerializable
      * @returns Boolean
      * @throws \LogicException
      */
-    private function _isSetterOrGetter($name, $value) {
+    private function _isAccessibleGetterOrSetter($name, $value) {
         if (in_array( $name, [ 'prototype', 'properties' ] )) {
             throw new \LogicException('Property "'.$name.'" is read only.');
         }
@@ -160,25 +160,26 @@ final class Prototype implements \JsonSerializable
     }
 
     private function _isBindableSetter($property) {
-        return isset($property)
-            && (is_array($property) || $property instanceof \ArrayAccess) 
+        return $this->_isGetterOrSetter($property)
             && isset($property['set']) 
             && is_callable($property['set']);
     }
 
     private function _isNonBindableSetter($property) {
-        return isset($property) 
-            && (is_array($property) || $property instanceof \ArrayAccess) 
+        return $this->_isGetterOrSetter($property)
             && isset($property[':set']) 
             && is_callable($property[':set']);
     }
 
     private function _isReadOnly($property) {
-        return isset($property) 
-            && (is_array($property) || $property instanceof \ArrayAccess) 
+        return $this->_isGetterOrSetter($property)
             && ( 
                 (isset($property['get']) && is_callable($property['get']) )
                 || (isset($property[':get']) && is_callable($property[':get']) )
+            )
+            && !( 
+                (isset($property['set']) && is_callable($property['set']) )
+                || (isset($property[':set']) && is_callable($property[':set']) )
             );
     }
 
@@ -202,7 +203,7 @@ final class Prototype implements \JsonSerializable
      */
     public function __set($name, $value)
     {
-        $valueIsSetterOrGetter = $this->_isSetterOrGetter($name, $value);
+        $valueIsSetterOrGetter = $this->_isAccessibleGetterOrSetter($name, $value);
 
         $changes = [
             'name'   => $name,
