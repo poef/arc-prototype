@@ -132,32 +132,88 @@ final class Prototype implements \JsonSerializable
     /**
      * @param $name
      * @param $value
+     * @returns Boolean
+     * @throws \LogicException
+     */
+    private function _isSetterOrGetter($name, $value) {
+        if (in_array( $name, [ 'prototype', 'properties' ] )) {
+            throw new \LogicException('Property "'.$name.'" is read only.');
+        }
+
+        if ( !isset($this->_ownProperties[$name]) && !\arc\prototype::isExtensible($this) ) {
+            throw new \LogicException('Object is not extensible.');
+        }
+
+        $valueIsSetterOrGetter = $this->_isGetterOrSetter($value);
+
+        if (isset($this->_ownProperties[$name])) {
+            $propertyIsSetterOrGetter = $this->_isGetterOrSetter($this->_ownProperties[$name]);
+        } else {
+            $propertyIsSetterOrGetter = false;
+        }
+        
+        if ( \arc\prototype::isSealed($this) && $valueIsSetterOrGetter!=$propertyIsSetterOrGetter ) {
+            throw new \LogicException('Object is sealed.');
+        }
+        
+        return $valueIsSetterOrGetter;
+    }
+
+    private function _isBindableSetter($property) {
+        return isset($property)
+            && (is_array($property) || $property instanceof \ArrayAccess) 
+            && isset($property['set']) 
+            && is_callable($property['set']);
+    }
+
+    private function _isNonBindableSetter($property) {
+        return isset($property) 
+            && (is_array($property) || $property instanceof \ArrayAccess) 
+            && isset($property[':set']) 
+            && is_callable($property[':set']);
+    }
+
+    private function _isReadOnly($property) {
+        return isset($property) 
+            && (is_array($property) || $property instanceof \ArrayAccess) 
+            && ( 
+                (isset($property['get']) && is_callable($property['get']) )
+                || (isset($property[':get']) && is_callable($property[':get']) )
+            );
+    }
+
+    private function _purgePrototypeCache($name, $changes) {
+        // purge prototype cache for this property - this will clear too much but cache will be filled again
+        // clearing exactly the right entries from the cache will generally cost more performance than this
+        unset( self::$properties[ $name ] );
+        $observers = \arc\prototype::getObservers($this);
+
+        if ( isset($observers[$changes['type']]) ) {
+            foreach($observers[$changes['type']] as $observer) {
+                $observer($changes);
+            }
+        }
+    }
+    
+    /**
+     * @param $name
+     * @param $value
      * @throws \LogicException
      */
     public function __set($name, $value)
     {
-        if (in_array( $name, [ 'prototype', 'properties' ] )) {
-            throw new \LogicException('Property "'.$name.'" is read only.');
-        }
-        if ( !isset($this->_ownProperties[$name]) && !\arc\prototype::isExtensible($this) ) {
-            throw new \LogicException('Object is not extensible.');
-        }
-        $valueIsSetterOrGetter = $this->_isGetterOrSetter($value);
-        $propertyIsSetterOrGetter = (isset($this->_ownProperties[$name])
-            ? $this->_isGetterOrSetter($this->_ownProperties[$name])
-            : false
-        );
-        if ( \arc\prototype::isSealed($this) && $valueIsSetterOrGetter!=$propertyIsSetterOrGetter ) {
-            throw new \LogicException('Object is sealed.');
-        }
-        $changes = [];
-        $changes['name'] = $name;
-        $changes['object'] = $this;
+        $valueIsSetterOrGetter = $this->_isSetterOrGetter($name, $value);
+
+        $changes = [
+            'name'   => $name,
+            'object' => $this
+        ];
+        
         if ( array_key_exists($name, $this->_ownProperties) ) {
-            $changes['type'] = 'update';
+            $changes['type']     = 'update';
             $changes['oldValue'] = $this->_ownProperties[$name];
         } else {
-            $changes['type'] = 'add';
+            $changes['type']     = 'add';
         }
 
         $clearcache = false;
@@ -167,36 +223,20 @@ final class Prototype implements \JsonSerializable
         } else {
             $current = $this->_getPrototypeProperty($name);
         }
+
         if ( $valueIsSetterOrGetter ) {
             // reconfigure current property
             $clearcache = true;
             $this->_ownProperties[$name] = $value;
             unset($this->_staticMethods[$name]);
-        } else if (
-            isset($current)
-            && (is_array($current) || $current instanceof \ArrayAccess) 
-            && isset($current['set']) 
-            && is_callable($current['set'])
-        ) {
+        } else if ( $this->_isBindableSetter($current) ) {
             // bindable setter found, use it, no need to set anything in _ownProperties
             $setter = \Closure::bind($current['set'], $this, $this);
             $setter($value);
-        } else if (
-            isset($current) 
-            && (is_array($current) || $current instanceof \ArrayAccess) 
-            && isset($current[':set']) 
-            && is_callable($current[':set'])
-        ) {
+        } else if ( $this->_isNonBindableSetter($current) ) {
             // nonbindable setter found
             $current[':set']($this, $value);
-        } else if (
-            isset($current) 
-            && (is_array($current) || $current instanceof \ArrayAccess) 
-            && ( 
-                (isset($current['get']) && is_callable($current['get']) )
-                || (isset($current[':get']) && is_callable($current[':get']) )
-            )
-        ) {
+        } else if ( $this->_isReadOnly($current) ) {
             // there is only a getter, no setter, so ignore setting this property, its readonly.
             throw new \LogicException('Property "'.$name.'" is readonly.');
         } else if (!array_key_exists($name, $this->_staticMethods)) {
@@ -208,17 +248,11 @@ final class Prototype implements \JsonSerializable
             $clearcache = true;
             $this->_ownProperties[$name] = $value;
         }
+
         if ( $clearcache ) {
-            // purge prototype cache for this property - this will clear too much but cache will be filled again
-            // clearing exactly the right entries from the cache will generally cost more performance than this
-            unset( self::$properties[ $name ] );
-            $observers = \arc\prototype::getObservers($this);
-            if ( isset($observers[$changes['type']]) ) {
-                foreach($observers[$changes['type']] as $observer) {
-                    $observer($changes);
-                }
-            }
+            $this->_purgePrototypeCache($name, $changes);
         }
+
     }
 
     /**
