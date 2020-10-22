@@ -49,7 +49,7 @@ final class prototype
      * @param array $properties List of properties and methods
      * @return \arc\prototype\Prototype
      */
-    public static function create(array $properties) :prototype\Prototype
+    public static function create(array $properties = []) :prototype\Prototype
     {
         return new prototype\Prototype($properties);
     }
@@ -61,7 +61,7 @@ final class prototype
      * @param array $properties List of properties and methods
      * @return \arc\prototype\Prototype
      */
-    public static function extend(prototype\Prototype $prototype, array $properties) :prototype\Prototype
+    public static function extend(prototype\Prototype $prototype, array $properties = []) :prototype\Prototype
     {
         if (!isset(self::$instances)) {
             self::$instances = new \SplObjectStorage();
